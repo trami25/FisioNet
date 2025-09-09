@@ -11,31 +11,33 @@ Trenutno ne postoji centralizovana platforma za praćenje karijere odbojkaša i 
 ### 1. Funkcionalnosti za **neulogovane korisnike**
 1.1. Pretraga igrača po imenu, prezimenu i klubu.  
 1.2. Filtriranje igrača po poziciji, tržišnoj vrednosti i broju poena.  
-1.3. Pregled statusa igrača (igra za klub, reprezentaciju, oba ili neaktivan).  
-1.4. Pregled referenciranih mečeva i osnovne statistike učinka.  
-1.5. Pregled video materijala vezanih za igrača ili meč.  
+1.3. Pregled statusa igrača: klub, reprezentacija, oba ili neaktivan.  
+1.4. Ako igrač igra za reprezentaciju, prikaz države.  
+1.5. Pregled referenciranih mečeva i osnovne statistike.  
+1.6. Pregled slika igrača u **klupskom i reprezentativnom dresu**.
 
 ---
 
-### 2. Funkcionalnosti za **ulogovane korisnike** (osim osnovnog pretraživanja)
-2.1. Ocenjivanje igrača (npr. skala 1–5).  
+### 2. Funkcionalnosti za **ulogovane korisnike**
+2.1. Ocenjivanje igrača (1–5).  
 2.2. Komentarisanje igrača.  
-2.3. Pregled istorije svojih komentara i ocena.  
+2.3. Pregled istorije svojih komentara i ocena.
+2.4. Pregled video materijala vezanih za igrača ili meč.  
 
 ---
 
 ### 3. Funkcionalnosti za **moderatora**
-3.1. Dodavanje, ažuriranje i brisanje video materijala.  
+3.1. Dodavanje, ažuriranje i brisanje video materijala (YouTube linkovi).  
 3.2. Dodavanje i ažuriranje referenciranih mečeva i statistike učinka igrača.  
 3.3. Upravljanje komentarima korisnika (brisanje neprimerenih komentara).  
-3.4. Dodavanje i ažuriranje slika igrača (klupski i reprezentativni dres).  
+3.4. Dodavanje i ažuriranje slika igrača (klupski/reprezentativni dres).
 
 ---
 
 ### 4. Funkcionalnosti za **admina**
-4.1. Upravljanje svim funkcionalnostima moderatora.  
-4.2. Upravljanje korisnicima (dodavanje, brisanje, dodeljivanje uloge).  
-4.3. Upravljanje igračima: dodavanje novih, ažuriranje postojećih i brisanje.  
+4.1. Sve funkcionalnosti moderatora.  
+4.2. Upravljanje korisnicima: dodavanje, brisanje, dodeljivanje uloge.  
+4.3. Upravljanje igračima: dodavanje novih, ažuriranje i brisanje.  
 4.4. Upravljanje eksperimentima: pokretanje, praćenje i vizualizacija rezultata.  
 
 ---
@@ -47,12 +49,7 @@ Trenutno ne postoji centralizovana platforma za praćenje karijere odbojkaša i 
 2. **Frontend (Pharo ili web)**  
    - Interfejs za pretragu, filtriranje, ocenjivanje, komentare, pregled mečeva i videa.  
 3. **Baza podataka (PostgreSQL)**  
-   - Tabele: `igrac`, `mec`, `igrac_mec`, `video`, `komentar`, `korisnik`, `slika`.  
-   - Veze:  
-     - `igrac` – `igrac_mec` – `mec`  
-     - `igrac` – `video` / `mec` – `video`  
-     - `igrac` – `komentar` – `korisnik`  
-     - `igrac` – `slika`  
+   -- Tabele: `korisnik`, `reprezentacija`, `igrac`, `slika`, `mec`, `igrac_mec`, `video`, `komentar`. ...
 
 ---
 
