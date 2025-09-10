@@ -1,95 +1,98 @@
-# VolleyNet
+# **VolleyNet 
 
-## Opis problema
-Trenutno ne postoji centralizovana platforma za praćenje karijere odbojkaša i odbojkašica.  
-**VolleyNet** rešava ovaj problem omogućavajući ljubiteljima odbojke da pregledaju igrače, njihove statistike, mečeve i video materijale, a klubovima, selektorima i adminima da upravljaju sadržajem.
+**Projekat radim za ocenu 10.**
 
----
+### **Cilj:**
 
-## Specifikacija funkcionalnosti
+Web aplikacija koja omogućava ljubiteljima odbojke i stručnim timovima da prate:
 
-### 1. Funkcionalnosti za **neulogovane korisnike**
-1.1. Pretraga igrača po imenu, prezimenu i klubu.  
-1.2. Filtriranje igrača po poziciji, tržišnoj vrednosti i broju poena.  
-1.3. Pregled statusa igrača: klub, reprezentacija, oba ili neaktivan.  
-1.4. Ako igrač igra za reprezentaciju, prikaz države.  
-1.5. Pregled referenciranih mečeva i osnovne statistike.  
-1.6. Pregled slika igrača u **klupskom i reprezentativnom dresu**.
+- Karijeru igrača i igračica
+- Status igrača (klub, reprezentacija, oba ili neaktivan)
+- Državu reprezentacije
+- Statistiku iz mečeva
+- Tip takmičenja: Svetsko prvenstvo, Evropsko prvenstvo, Liga šampiona / klupsko prvenstvo, Nacionalna liga, Prijateljski mečevi
+- Video reference (YouTube)
+- Slike u klupskom i reprezentativnom dresu
+- Ocene i komentare korisnika
 
----
+Sistem omogućava moderatorima i adminima da upravljaju sadržajem i korisnicima, dok fanovi mogu pregledati, filtrirati i komentarisati igrače i mečeve.
 
-### 2. Funkcionalnosti za **ulogovane korisnike**
-2.1. Ocenjivanje igrača (1–5).  
-2.2. Komentarisanje igrača.  
-2.3. Pregled istorije svojih komentara i ocena.
-2.4. Pregled video materijala vezanih za igrača ili meč.  
+VolleyNet je inspirisan sajtom **VolleyBox**, ali unapređen sa:
 
----
-
-### 3. Funkcionalnosti za **moderatora**
-3.1. Dodavanje, ažuriranje i brisanje video materijala (YouTube linkovi).  
-3.2. Dodavanje i ažuriranje referenciranih mečeva i statistike učinka igrača.  
-3.3. Upravljanje komentarima korisnika (brisanje neprimerenih komentara).  
-3.4. Dodavanje i ažuriranje slika igrača (klupski/reprezentativni dres).
+- Mikroservisnom arhitekturom
+- Višestrukim bazama (PostgreSQL i SQLite)
+- Vizualizacijom performansi i statistike
+- Naprednim filtriranjem i pretragom
+- Ulogama korisnika i role-based pristupom
 
 ---
 
-### 4. Funkcionalnosti za **admina**
-4.1. Sve funkcionalnosti moderatora.  
-4.2. Upravljanje korisnicima: dodavanje, brisanje, dodeljivanje uloge.  
-4.3. Upravljanje igračima: dodavanje novih, ažuriranje i brisanje.  
-4.4. Upravljanje eksperimentima: pokretanje, praćenje i vizualizacija rezultata.  
+### **Tehnologije:**
+
+* **Backend:** Rust (mikroservisi)  
+* **Frontend:** Pharo / Web (tekstualni terminal ili web interfejs)  
+* **Baze:** PostgreSQL (igrači, korisnici, komentari), SQLite (mečevi, statistika, mediji, takmičenja)  
+* **Upload:** Slike i video reference preko URL-a / cloud storage  
+* **Autentikacija:** JWT + role-based access (Neulogovani, Ulogovani, Moderator, Admin)
 
 ---
 
-## Arhitektura sistema
-1. **Backend (Rust)**  
-   - API za igrače, mečeve, video, komentare i ocene.  
-   - Implementacija eksperimenata sa paralelnim i sekvencijalnim algoritmima.  
-2. **Frontend (Pharo ili web)**  
-   - Interfejs za pretragu, filtriranje, ocenjivanje, komentare, pregled mečeva i videa.  
-3. **Baza podataka (PostgreSQL)**  
-   -- Tabele: `korisnik`, `reprezentacija`, `igrac`, `slika`, `mec`, `igrac_mec`, `video`, `komentar`. ...
+### **Funkcionalnosti**
+
+#### **1. Neulogovani korisnici**
+1. Pretraga igrača po imenu, prezimenu i klubu  
+2. Filtriranje po poziciji, tržišnoj vrednosti i broju poena  
+3. Pregled statusa igrača (klub / reprezentacija / oba / neaktivan)  
+4. Prikaz države ako igrač igra za reprezentaciju  
+5. Pregled referenciranih mečeva i statistike  
+6. Pregled video materijala (YouTube linkovi)  
+7. Pregled slika igrača (klupski i reprezentativni dres)  
+8. Pregled mečeva po tipu takmičenja i sezoni
+
+#### **2. Ulogovani korisnici**
+1. Ocenjivanje igrača (1–5)  
+2. Komentarisanje igrača  
+3. Pregled istorije svojih komentara i ocena  
+4. Praćenje omiljenih igrača i timova  
+
+#### **3. Moderator**
+1. Dodavanje, ažuriranje i brisanje video materijala (YouTube)  
+2. Dodavanje i ažuriranje mečeva i statistike igrača  
+3. Upravljanje komentarima korisnika (brisanje neprimerenih)  
+4. Dodavanje i ažuriranje slika igrača  
+5. Dodavanje i održavanje takmičenja i sezona  
+
+#### **4. Admin**
+1. Sve funkcionalnosti moderatora  
+2. Upravljanje korisnicima: dodavanje, brisanje, dodeljivanje uloga  
+3. Upravljanje igračima: dodavanje, ažuriranje, brisanje  
+4. Upravljanje mikroservisima i bazama po potrebi  
 
 ---
 
-## Tehnologije
-- **Rust** – backend i eksperimenti  
-- **Python** – paralelni/sekevencijalni eksperimenti  
-- **PostgreSQL** – baza podataka  
-- **Pharo / Web frontend** – korisnički interfejs  
-- **Plotters (Rust)** – vizualizacija rezultata  
+### **Mikroservisna arhitektura**
+
+| Mikroservis | Funkcionalnosti | Baza podataka |
+| ------------ | --------------- | ------------- |
+| **Player Service** | CRUD operacije za igrače, status, reprezentacija, slike | PostgreSQL |
+| **Match Service** | CRUD za mečeve, statistika igrača | SQLite |
+| **Media Service** | Upravljanje video linkovima i slikama | SQLite |
+| **User & Comment Service** | Korisnici, autentikacija, komentari i ocene | PostgreSQL |
+| **Competition Service** | Upravljanje takmičenjima i sezonama (svetsko, evropsko, klupsko, nacionalna liga) | SQLite |
+
 
 ---
 
-## Plan eksperimenata
-1. Implementacija algoritma za obradu velikih datasetova igrača i statistika.  
-2. Python implementacija: sekvencijalna i paralelizovana varijanta.  
-3. Rust implementacija: sekvencijalna i paralelizovana varijanta.  
-4. Eksperimenti jakog i slabog skaliranja.  
-5. Merenje vremena izvršavanja i ubrzanja.  
-6. Vizualizacija rezultata grafički (vreme izvršavanja, ubrzanje, iteracije).  
+### **Uloge u sistemu**
+
+| Uloga | Opis | Glavne odgovornosti |
+| ----- | ----- | ------------------ |
+| **Neulogovani korisnik** | Pregled i pretraga sadržaja | Pregled igrača, mečeva, videa i slika |
+| **Ulogovani korisnik** | Aktivno učestvuje u sistemu | Komentari, ocene, istorija aktivnosti, praćenje omiljenih igrača/timova |
+| **Moderator** | Upravlja medijskim i statističkim sadržajem | Dodavanje/brisanje video linkova, slika, mečeva, takmičenja, moderacija komentara |
+| **Administrator** | Upravljanje korisnicima i mikroservisima | Dodavanje/brisanje korisnika, igrača, nadzor sistema, upravljanje servisima |
 
 ---
 
-## Rezultati eksperimenata
-### Python implementacija
-- Sekvencijalna varijanta:  
-- Paralelizovana varijanta:  
-- Dobijeno ubrzanje:  
 
-### Rust implementacija
-- Sekvencijalna varijanta:  
-- Paralelizovana varijanta:  
-- Dobijeno ubrzanje:  
-
-### Poređenje jakog i slabog skaliranja
-*(grafikoni i tabele sa podacima)*
-
----
-
-## Vizualizacija
-- Vreme izvršavanja vs. broj jezgara  
-- Ubrzanje vs. veličina problema  
-- Iterativni prikaz po koracima  
 
