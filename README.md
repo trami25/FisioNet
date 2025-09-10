@@ -1,72 +1,61 @@
-# **VolleyNet** 
+# **FisioNet – Platforma za fizioterapiju i savete**
 
 **Projekat radim za ocenu 10.**
 
 ### **Cilj:**
 
-Web aplikacija koja omogućava ljubiteljima odbojke i stručnim timovima da prate:
+Terminal i web aplikacija koja omogućava:
 
-- Karijeru igrača i igračica
-- Status igrača (klub, reprezentacija, oba ili neaktivan)
-- Državu reprezentacije
-- Statistiku iz mečeva
-- Tip takmičenja: Svetsko prvenstvo, Evropsko prvenstvo, Liga šampiona / klupsko prvenstvo, Nacionalna liga, Prijateljski mečevi
-- Video reference (YouTube)
-- Slike u klupskom i reprezentativnom dresu
-- Ocene i komentare korisnika
+- Fizioterapeutima da dele vežbe, savete i vodiče  
+- Pacijentima da prate vežbe, postavljaju pitanja i komentare  
+- Grupama i forumima za razmenu iskustava  
+- Pretragu vežbi po tipu problema (npr. kičma, koleno, rameni pojas)  
+- Praćenje napretka pacijenata  
+- Video i slike vežbi, uputstva i reference  
+- Dogovaranje konsultacija i online sesija  
 
-Sistem omogućava moderatorima i adminima da upravljaju sadržajem i korisnicima, dok fanovi mogu pregledati, filtrirati i komentarisati igrače i mečeve.
-
-VolleyNet je inspirisan sajtom **VolleyBox**, ali unapređen sa:
-
-- Mikroservisnom arhitekturom
-- Višestrukim bazama (PostgreSQL i SQLite)
-- Vizualizacijom performansi i statistike
-- Naprednim filtriranjem i pretragom
-- Ulogama korisnika i role-based pristupom
+Sistem omogućava moderatorima i adminima da upravljaju sadržajem, dok korisnici mogu pregledati, filtrirati, komentarisati i oceniti savete i vežbe.
 
 ---
 
 ### **Tehnologije:**
 
 * **Backend:** Rust (mikroservisi)  
-* **Frontend:** Pharo / Web (tekstualni terminal ili web interfejs)  
-* **Baze:** PostgreSQL (igrači, korisnici, komentari), SQLite (mečevi, statistika, mediji, takmičenja)  
-* **Upload:** Slike i video reference preko URL-a / cloud storage  
-* **Autentikacija:** JWT + role-based access (Neulogovani, Ulogovani, Moderator, Admin)
+* **Frontend:** Pharo / Web  
+* **Baze:** PostgreSQL (korisnici, komentari, ocene), SQLite (vežbe, video, slike, sesije)  
+* **Upload:** Video i slike vežbi preko URL-a / cloud storage  
+* **Autentikacija:** JWT + role-based access (Neulogovani, Ulogovani, Moderator, Admin, Fizioterapeut)
 
 ---
 
 ### **Funkcionalnosti**
 
 #### **1. Neulogovani korisnici**
-1. Pretraga igrača po imenu, prezimenu i klubu  
-2. Filtriranje po poziciji, tržišnoj vrednosti i broju poena  
-3. Pregled statusa igrača (klub / reprezentacija / oba / neaktivan)  
-4. Prikaz države ako igrač igra za reprezentaciju  
-5. Pregled referenciranih mečeva i statistike  
-6. Pregled video materijala (YouTube linkovi)  
-7. Pregled slika igrača (klupski i reprezentativni dres)  
-8. Pregled mečeva po tipu takmičenja i sezoni
+1. Pretraga vežbi po tipu problema ili telu  
+2. Filtriranje po težini, opremi, vremenu izvođenja  
+3. Pregled video i slikovnih uputstava  
+4. Pregled saveta i opštih vodiča za fizioterapiju  
 
-#### **2. Ulogovani korisnici**
-1. Ocenjivanje igrača (1–5)  
-2. Komentarisanje igrača  
-3. Pregled istorije svojih komentara i ocena  
-4. Praćenje omiljenih igrača i timova  
+#### **2. Ulogovani korisnici (pacijenti)**
+1. Praćenje vežbi i napretka  
+2. Ocenjivanje i komentarisanje vežbi  
+3. Postavljanje pitanja fizioterapeutima  
+4. Kreiranje liste omiljenih vežbi i vodiča  
 
-#### **3. Moderator**
-1. Dodavanje, ažuriranje i brisanje video materijala (YouTube)  
-2. Dodavanje i ažuriranje mečeva i statistike igrača  
-3. Upravljanje komentarima korisnika (brisanje neprimerenih)  
-4. Dodavanje i ažuriranje slika igrača  
-5. Dodavanje i održavanje takmičenja i sezona  
+#### **3. Fizioterapeuti**
+1. Dodavanje, ažuriranje i brisanje vežbi i saveta  
+2. Kreiranje video i slikovnih uputstava  
+3. Odgovaranje na pitanja pacijenata  
+4. Praćenje statistike uspeha vežbi  
 
-#### **4. Admin**
+#### **4. Moderator**
+1. Upravljanje sadržajem: brisanje neprimerenih komentara i vežbi  
+2. Verifikacija fizioterapeuta i njihovih objava  
+
+#### **5. Admin**
 1. Sve funkcionalnosti moderatora  
-2. Upravljanje korisnicima: dodavanje, brisanje, dodeljivanje uloga  
-3. Upravljanje igračima: dodavanje, ažuriranje, brisanje  
-4. Upravljanje mikroservisima i bazama po potrebi  
+2. Upravljanje korisnicima i fizioterapeutima: dodavanje, brisanje, dodeljivanje uloga  
+3. Upravljanje mikroservisima i bazama  
 
 ---
 
@@ -74,25 +63,20 @@ VolleyNet je inspirisan sajtom **VolleyBox**, ali unapređen sa:
 
 | Mikroservis | Funkcionalnosti | Baza podataka |
 | ------------ | --------------- | ------------- |
-| **Player Service** | CRUD operacije za igrače, status, reprezentacija, slike | PostgreSQL |
-| **Match Service** | CRUD za mečeve, statistika igrača | SQLite |
-| **Media Service** | Upravljanje video linkovima i slikama | SQLite |
+| **Exercise Service** | CRUD za vežbe, savete, vodiče | SQLite |
 | **User & Comment Service** | Korisnici, autentikacija, komentari i ocene | PostgreSQL |
-| **Competition Service** | Upravljanje takmičenjima i sezonama (svetsko, evropsko, klupsko, nacionalna liga) | SQLite |
-
+| **Media Service** | Upravljanje video i slikovnim uputstvima | SQLite |
+| **Session Service** | Zakazivanje konsultacija i online sesija | SQLite |
+ 
 
 ---
-
 ### **Uloge u sistemu**
 
 | Uloga | Opis | Glavne odgovornosti |
 | ----- | ----- | ------------------ |
-| **Neulogovani korisnik** | Pregled i pretraga sadržaja | Pregled igrača, mečeva, videa i slika |
-| **Ulogovani korisnik** | Aktivno učestvuje u sistemu | Komentari, ocene, istorija aktivnosti, praćenje omiljenih igrača/timova |
-| **Moderator** | Upravlja medijskim i statističkim sadržajem | Dodavanje/brisanje video linkova, slika, mečeva, takmičenja, moderacija komentara |
-| **Administrator** | Upravljanje korisnicima i mikroservisima | Dodavanje/brisanje korisnika, igrača, nadzor sistema, upravljanje servisima |
-
----
-
-
+| **Neulogovani korisnik** | Pregled sadržaja | Pregled vežbi, vodiča i video uputstava |
+| **Ulogovani korisnik (pacijent)** | Aktivno učestvuje | Praćenje vežbi, ocene i komentari, pitanja fizioterapeutima |
+| **Fizioterapeut** | Objavljuje sadržaj i vodi pacijente | Dodavanje vežbi, saveta, odgovaranje na pitanja, praćenje uspeha |
+| **Moderator** | Kontrola sadržaja | Brisanje neprimerenih komentara i vežbi, verifikacija fizioterapeuta |
+| **Administrator** | Upravljanje korisnicima i servisima | Dodavanje/brisanje korisnika, nadzor sistema, upravljanje mikroservisima |
 
