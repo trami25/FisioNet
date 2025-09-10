@@ -1,82 +1,103 @@
-# **FisioNet – Platforma za fizioterapiju i savete**
+# FisioNet
 
-**Projekat radim za ocenu 10.**
+## Opis projekta
+Ova aplikacija je namenjena fizioterapeutima, pacijentima i običnim korisnicima za interakciju, edukaciju i praćenje napretka kroz rehabilitacione vežbe.  
+Platforma omogućava:  
+- Fizioterapeutima da dele vežbe, savete i vodiče.  
+- Pacijentima da prate vežbe, postavljaju pitanja i komentare.  
+- Kreiranje grupa i foruma za razmenu iskustava.  
+- Zakazivanje **online i uživo termina**.  
+- Slanje **notifikacija i podsetnika** pacijentima i fizioterapeutima.  
 
-### **Cilj:**
-
-Terminal i web aplikacija koja omogućava:
-
-- Fizioterapeutima da dele vežbe, savete i vodiče  
-- Pacijentima da prate vežbe, postavljaju pitanja i komentare  
-- Grupama i forumima za razmenu iskustava  
-- Pretragu vežbi po tipu problema (npr. kičma, koleno, rameni pojas)  
-- Praćenje napretka pacijenata  
-- Video i slike vežbi, uputstva i reference  
-- Dogovaranje konsultacija i online sesija  
-
-Sistem omogućava moderatorima i adminima da upravljaju sadržajem, dok korisnici mogu pregledati, filtrirati, komentarisati i oceniti savete i vežbe.
+Aplikacija se sastoji iz **terminal aplikacije** i **web interfejsa**.  
 
 ---
 
-### **Tehnologije:**
-
-* **Backend:** Rust (mikroservisi)  
-* **Frontend:** Pharo / Web  
-* **Baze:** PostgreSQL (korisnici, komentari, ocene), SQLite (vežbe, video, slike, sesije)  
-* **Upload:** Video i slike vežbi preko URL-a / cloud storage  
-* **Autentikacija:** JWT + role-based access (Neulogovani, Ulogovani, Moderator, Admin, Fizioterapeut)
-
----
-
-### **Funkcionalnosti**
-
-#### **1. Neulogovani korisnici**
-1. Pretraga vežbi po tipu problema ili telu  
-2. Filtriranje po težini, opremi, vremenu izvođenja  
-3. Pregled video i slikovnih uputstava  
-4. Pregled saveta i opštih vodiča za fizioterapiju  
-
-#### **2. Ulogovani korisnici (pacijenti)**
-1. Praćenje vežbi i napretka  
-2. Ocenjivanje i komentarisanje vežbi  
-3. Postavljanje pitanja fizioterapeutima  
-4. Kreiranje liste omiljenih vežbi i vodiča  
-
-#### **3. Fizioterapeuti**
-1. Dodavanje, ažuriranje i brisanje vežbi i saveta  
-2. Kreiranje video i slikovnih uputstava  
-3. Odgovaranje na pitanja pacijenata  
-4. Praćenje statistike uspeha vežbi  
-
-#### **4. Moderator**
-1. Upravljanje sadržajem: brisanje neprimerenih komentara i vežbi  
-2. Verifikacija fizioterapeuta i njihovih objava  
-
-#### **5. Admin**
-1. Sve funkcionalnosti moderatora  
-2. Upravljanje korisnicima i fizioterapeutima: dodavanje, brisanje, dodeljivanje uloga  
-3. Upravljanje mikroservisima i bazama  
+## ⚙Tehnologije
+- **Backend:** Rust (mikroservisi, REST API)  
+- **Frontend:** Pharo / Web  
+- **Baze podataka:**  
+  - PostgreSQL – korisnici, komentari, ocene, notifikacije  
+  - SQLite – vežbe, multimedija, sesije  
+- **Autentikacija:** JWT + role-based access  
+- **Upload medija:** URL ili cloud storage (npr. AWS S3, GCP Storage, MinIO)  
+- **Notifikacije:** Email, Push, Reminderi (cron job)  
 
 ---
 
-### **Mikroservisna arhitektura**
-
-| Mikroservis | Funkcionalnosti | Baza podataka |
-| ------------ | --------------- | ------------- |
-| **Exercise Service** | CRUD za vežbe, savete, vodiče | SQLite |
-| **User & Comment Service** | Korisnici, autentikacija, komentari i ocene | PostgreSQL |
-| **Media Service** | Upravljanje video i slikovnim uputstvima | SQLite |
-| **Session Service** | Zakazivanje konsultacija i online sesija | SQLite |
- 
+## 🧩 Mikroservisna arhitektura
+| Mikroservis             | Funkcionalnosti | Baza        |
+|-------------------------|-----------------|-------------|
+| **Exercise Service**    | CRUD za vežbe, vodiče i savete | SQLite |
+| **User & Comment Service** | Upravljanje korisnicima, autentikacija, komentari i ocene | PostgreSQL |
+| **Media Service**       | Upload i prikaz multimedijalnih sadržaja | SQLite |
+| **Session Service**     | Zakazivanje online/uživo konsultacija, kalendar termina | SQLite |
+| **Notification Service**| Reminderi i obaveštenja (email, push) | PostgreSQL |
 
 ---
-### **Uloge u sistemu**
 
-| Uloga | Opis | Glavne odgovornosti |
-| ----- | ----- | ------------------ |
-| **Neulogovani korisnik** | Pregled sadržaja | Pregled vežbi, vodiča i video uputstava |
-| **Ulogovani korisnik (pacijent)** | Aktivno učestvuje | Praćenje vežbi, ocene i komentari, pitanja fizioterapeutima |
-| **Fizioterapeut** | Objavljuje sadržaj i vodi pacijente | Dodavanje vežbi, saveta, odgovaranje na pitanja, praćenje uspeha |
-| **Moderator** | Kontrola sadržaja | Brisanje neprimerenih komentara i vežbi, verifikacija fizioterapeuta |
-| **Administrator** | Upravljanje korisnicima i servisima | Dodavanje/brisanje korisnika, nadzor sistema, upravljanje mikroservisima |
+## Uloge u sistemu
+| Uloga                  | Opis | Glavne odgovornosti |
+|------------------------|------|----------------------|
+| **Neulogovani korisnik** | Pasivan korisnik | Pretraga i pregled sadržaja |
+| **Pacijent**           | Aktivni korisnik | Praćenje vežbi, ocenjivanje i komentarisanje, zakazivanje termina |
+| **Fizioterapeut**      | Autor i vodič | Dodavanje vežbi, odgovaranje pacijentima, kreiranje vodiča |
+| **Moderator**          | Kontrolor sadržaja | Brisanje neprimerenih sadržaja, verifikacija fizioterapeuta |
+| **Administrator**      | Nadzor sistema | Upravljanje korisnicima, ulogama i mikroservisima |
+
+---
+
+## Funkcionalni zahtevi po ulogama
+
+### 1. Neulogovani korisnici
+- Pretraga vežbi po tipu problema (npr. kičma, koleno, rame).  
+- Filtriranje vežbi po težini, potrebnoj opremi i vremenu izvođenja.  
+- Pregled video i slikovnih uputstava.  
+- Pregled javnih saveta i vodiča.  
+
+### 2. Ulogovani korisnici (pacijenti)
+- Sve mogućnosti neulogovanih korisnika.  
+- Praćenje vežbi i napretka.  
+- Ocenjivanje i komentarisanje vežbi.  
+- Postavljanje pitanja fizioterapeutima.  
+- Kreiranje liste omiljenih vežbi i vodiča.  
+- Zakazivanje online i uživo termina.  
+- Primanje notifikacija i podsetnika (vežbe, termini).  
+
+### 3. Fizioterapeuti
+- Sve mogućnosti pacijenata.  
+- Dodavanje, ažuriranje i brisanje vežbi i saveta.  
+- Kreiranje video i slikovnih uputstava.  
+- Odgovaranje na pitanja pacijenata.  
+- Praćenje statistike uspeha vežbi.  
+- Upravljanje sopstvenim rasporedom konsultacija.  
+
+### 4. Moderatori
+- Sve mogućnosti fizioterapeuta.  
+- Brisanje neprimerenih komentara i sadržaja.  
+- Verifikacija fizioterapeuta i njihovih objava.  
+- Upozoravanje korisnika ili blokiranje naloga (privremeno).  
+
+### 5. Administratori
+- Sve mogućnosti moderatora.  
+- Dodavanje, brisanje i upravljanje korisnicima i fizioterapeutima.  
+- Dodeljivanje i menjanje uloga korisnicima.  
+- Upravljanje mikroservisima i bazama podataka.  
+- Monitoring sistema i statistike korišćenja.  
+
+---
+
+## Notifikacije i Reminderi
+- Podsetnici za vežbe i zakazane termine.  
+- Notifikacije o novim pitanjima, komentarima i konsultacijama.  
+- Motivacione poruke pacijentima.  
+- Email i push integracija.  
+
+---
+
+## Zakazivanje termina
+- **Online konsultacije** (video call preko WebRTC).  
+- **Uživo termini** u ordinaciji ili sali.  
+- Automatski reminder 24h i 1h pre termina.  
+- Export u kalendar (iCal format).  
 
