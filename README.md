@@ -1,5 +1,7 @@
 # FisioNet
 
+Radim za ocenu 10
+
 ## Opis
 **FisioNet** je informacioni sistem i zajednička platforma za pacijente, fizioterapeute, moderatore i administratore.  
 Cilj sistema je da omogući:
