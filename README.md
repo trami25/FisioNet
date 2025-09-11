@@ -1,14 +1,14 @@
-# FizioNet
+# FisioNet
 
 ## Opis
-**FizioNet** je informacioni sistem i zajednička platforma za pacijente, fizioterapeute, farmaceute, moderatore i administratore.  
+**FisioNet** je informacioni sistem i zajednička platforma za pacijente, fizioterapeute, moderatore i administratore.  
 Cilj sistema je da omogući:
 - jednostavnu pretragu i izvođenje vežbi,  
 - zakazivanje termina kod fizioterapeuta,  
 - komunikaciju i praćenje terapija,  
 - deljenje iskustava putem foruma.  
 
-Aplikacija je dostupna kroz **web klijent (osnovni projekat)** i **mobilnu aplikaciju (diplomski deo)**.
+Aplikacija bi bila dostupna kroz **web klijent (osnovni projekat)** i **mobilnu aplikaciju (diplomski deo)**.
 
 ---
 
@@ -45,9 +45,6 @@ Aplikacija je dostupna kroz **web klijent (osnovni projekat)** i **mobilnu aplik
 - Upravljanje sadržajem (dodavanje/brisanje vežbi, administracija foruma).  
 - Pregled izveštaja i statistika.  
 
-### Farmaceuti (opciono)
-- Dodavanje preporuka za lekove i suplemente.  
-
 ---
 
 ## Funkcionalnosti
@@ -78,9 +75,9 @@ Aplikacija je dostupna kroz **web klijent (osnovni projekat)** i **mobilnu aplik
 
 ### Storage
 - Cloud (S3 ili ekvivalent) za slike i video materijale.  
-- YouTube linkovi za mečeve/vežbe (radi uštede memorije).  
+- YouTube linkovi za vežbe (radi uštede memorije).  
 
-### DevOps
+### DevOps - potencijalno za diplomski
 - Docker za kontejnerizaciju.  
 - CI/CD (GitHub Actions).  
 - Monitoring (Prometheus + Grafana).  
