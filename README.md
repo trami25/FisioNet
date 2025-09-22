@@ -117,7 +117,7 @@ Mobilna aplikacija razvijena u **Flutter-u** za Android/iOS, povezana sa backend
 - Administracija korisnika i sadržaja.  
 
 ### Diplomski deo (Proširenja)
-- Mobilna aplikacija (Flutter).  
+- Mobilna aplikacija (React Native).  
 - Push notifikacije i reminderi.  
 - Chat sa fajlovima i real-time WebSocket podrškom.  
 - Offline cache i lokalna baza u aplikaciji.  
