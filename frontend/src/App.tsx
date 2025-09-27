@@ -10,6 +10,8 @@ import { RegisterPage } from './pages/RegisterPage';
 import { ExercisesPage } from './pages/ExercisesPage';
 import { ExerciseDetailPage } from './pages/ExerciseDetailPage';
 import { PhysiotherapistsPage } from './pages/PhysiotherapistsPage';
+import { PhysiotherapistDetailPage } from './pages/PhysiotherapistDetailPage';
+import { AppointmentBookingPage } from './pages/AppointmentBookingPage';
 import { AppointmentsPage } from './pages/AppointmentsPage';
 import { ForumPage } from './pages/ForumPage';
 import { ChatPage } from './pages/ChatPage';
@@ -67,6 +69,12 @@ function App() {
               <Route path="/exercises" element={<ExercisesPage />} />
               <Route path="/exercises/:id" element={<ExerciseDetailPage />} />
               <Route path="/physiotherapists" element={<PhysiotherapistsPage />} />
+              <Route path="/physiotherapists/:id" element={<PhysiotherapistDetailPage />} />
+              <Route path="/physiotherapists/:id/book" element={
+                <ProtectedRoute>
+                  <AppointmentBookingPage />
+                </ProtectedRoute>
+              } />
               
               {/* Protected routes - require authentication */}
               <Route path="/appointments" element={

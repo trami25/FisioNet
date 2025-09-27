@@ -65,6 +65,28 @@ export const ProfilePage: React.FC = () => {
   const [editData, setEditData] = useState<Partial<User>>(user || {});
   const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [settings, setSettings] = useState({
+    notifications: {
+      email: true,
+      push: true,
+      sms: false,
+      appointmentReminders: true,
+      exerciseReminders: true,
+      forumUpdates: false,
+    },
+    privacy: {
+      profileVisible: true,
+      showEmail: false,
+      showPhone: false,
+    },
+    preferences: {
+      language: 'sr',
+      theme: 'light',
+      timezone: 'Europe/Belgrade',
+    },
+  });
 
   if (!user) {
     return (
@@ -103,6 +125,72 @@ export const ProfilePage: React.FC = () => {
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
       console.error('Failed to update profile:', error);
+    }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Molimo odaberite sliku (PNG, JPG, JPEG)');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Slika ne sme biti veća od 5MB');
+        return;
+      }
+
+      setSelectedFile(file);
+      
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPreviewUrl(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAvatarUpload = async () => {
+    if (!selectedFile) return;
+
+    try {
+      // TODO: Upload to server
+      // For now, just use the preview URL as the profile image
+      const updatedUser = { ...user, profileImage: previewUrl };
+      updateUser(updatedUser);
+      
+      setAvatarDialogOpen(false);
+      setSelectedFile(null);
+      setPreviewUrl('');
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error) {
+      console.error('Failed to upload avatar:', error);
+      alert('Neuspešno otpremanje slike. Pokušajte ponovo.');
+    }
+  };
+
+  const handleSettingChange = (category: string, setting: string, value: boolean | string) => {
+    setSettings(prev => ({
+      ...prev,
+      [category]: {
+        ...prev[category as keyof typeof prev],
+        [setting]: value,
+      },
+    }));
+  };
+
+  const handleSettingsSave = async () => {
+    try {
+      // TODO: Save settings to API
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error) {
+      console.error('Failed to save settings:', error);
     }
   };
 
@@ -381,55 +469,245 @@ export const ProfilePage: React.FC = () => {
 
       <TabPanel value={activeTab} index={3}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {/* Notification Settings */}
           <Card>
             <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                <Settings color="primary" />
-                <Typography variant="h6">Opšta podešavanja</Typography>
-              </Box>
-              {/* Settings options would go here */}
-              <Typography variant="body2" color="text.secondary">
-                Opšta podešavanja će biti implementirana uskoro.
-              </Typography>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
                 <Notifications color="primary" />
                 <Typography variant="h6">Obaveštenja</Typography>
               </Box>
-              <Typography variant="body2" color="text.secondary">
-                Podešavanja obaveštenja će biti implementirana uskoro.
-              </Typography>
+              
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Box>
+                    <Typography variant="body1">Email obaveštenja</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Primajte obaveštenja na email adresu
+                    </Typography>
+                  </Box>
+                  <Button
+                    variant={settings.notifications.email ? "contained" : "outlined"}
+                    size="small"
+                    onClick={() => handleSettingChange('notifications', 'email', !settings.notifications.email)}
+                  >
+                    {settings.notifications.email ? 'Uključeno' : 'Isključeno'}
+                  </Button>
+                </Box>
+                
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Box>
+                    <Typography variant="body1">Push obaveštenja</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Primajte obaveštenja na telefon/računar
+                    </Typography>
+                  </Box>
+                  <Button
+                    variant={settings.notifications.push ? "contained" : "outlined"}
+                    size="small"
+                    onClick={() => handleSettingChange('notifications', 'push', !settings.notifications.push)}
+                  >
+                    {settings.notifications.push ? 'Uključeno' : 'Isključeno'}
+                  </Button>
+                </Box>
+                
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Box>
+                    <Typography variant="body1">SMS obaveštenja</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Primajte obaveštenja na telefon putem SMS-a
+                    </Typography>
+                  </Box>
+                  <Button
+                    variant={settings.notifications.sms ? "contained" : "outlined"}
+                    size="small"
+                    onClick={() => handleSettingChange('notifications', 'sms', !settings.notifications.sms)}
+                  >
+                    {settings.notifications.sms ? 'Uključeno' : 'Isključeno'}
+                  </Button>
+                </Box>
+                
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Box>
+                    <Typography variant="body1">Podsetnici za termine</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Podsetnik 24h pre zakazanog termina
+                    </Typography>
+                  </Box>
+                  <Button
+                    variant={settings.notifications.appointmentReminders ? "contained" : "outlined"}
+                    size="small"
+                    onClick={() => handleSettingChange('notifications', 'appointmentReminders', !settings.notifications.appointmentReminders)}
+                  >
+                    {settings.notifications.appointmentReminders ? 'Uključeno' : 'Isključeno'}
+                  </Button>
+                </Box>
+              </Box>
             </CardContent>
           </Card>
 
+          {/* Privacy Settings */}
           <Card>
             <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                <Security color="primary" />
+                <Typography variant="h6">Privatnost</Typography>
+              </Box>
+              
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Box>
+                    <Typography variant="body1">Javni profil</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Drugi korisnici mogu da vide vaš profil
+                    </Typography>
+                  </Box>
+                  <Button
+                    variant={settings.privacy.profileVisible ? "contained" : "outlined"}
+                    size="small"
+                    onClick={() => handleSettingChange('privacy', 'profileVisible', !settings.privacy.profileVisible)}
+                  >
+                    {settings.privacy.profileVisible ? 'Javno' : 'Privatno'}
+                  </Button>
+                </Box>
+                
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Box>
+                    <Typography variant="body1">Prikaži email</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Email adresa je vidljiva drugim korisnicima
+                    </Typography>
+                  </Box>
+                  <Button
+                    variant={settings.privacy.showEmail ? "contained" : "outlined"}
+                    size="small"
+                    onClick={() => handleSettingChange('privacy', 'showEmail', !settings.privacy.showEmail)}
+                  >
+                    {settings.privacy.showEmail ? 'Vidljivo' : 'Skriveno'}
+                  </Button>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* Security Settings */}
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
                 <Security color="primary" />
                 <Typography variant="h6">Sigurnost</Typography>
               </Box>
-              <Button variant="outlined" sx={{ mt: 1 }}>
-                Promeni lozinku
-              </Button>
+              
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Button 
+                  variant="outlined" 
+                  sx={{ alignSelf: 'flex-start' }}
+                  onClick={() => alert('Funkcionalnost menjanja lozinke će biti implementirana uskoro')}
+                >
+                  Promeni lozinku
+                </Button>
+                <Button 
+                  variant="outlined" 
+                  color="error"
+                  sx={{ alignSelf: 'flex-start' }}
+                  onClick={() => alert('Funkcionalnost brisanja naloga će biti implementirana uskoro')}
+                >
+                  Obriši nalog
+                </Button>
+              </Box>
             </CardContent>
           </Card>
+
+          {/* Save Settings Button */}
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<Save />}
+              onClick={handleSettingsSave}
+              sx={{ px: 4 }}
+            >
+              Sačuvaj podešavanja
+            </Button>
+          </Box>
         </Box>
       </TabPanel>
 
       {/* Avatar Upload Dialog */}
-      <Dialog open={avatarDialogOpen} onClose={() => setAvatarDialogOpen(false)}>
+      <Dialog 
+        open={avatarDialogOpen} 
+        onClose={() => {
+          setAvatarDialogOpen(false);
+          setSelectedFile(null);
+          setPreviewUrl('');
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Promena profilne slike</DialogTitle>
         <DialogContent>
-          <Typography variant="body2" color="text.secondary">
-            Funkcionalnost uploadovanja slike će biti implementirana uskoro.
-          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, py: 2 }}>
+            {/* Current/Preview Avatar */}
+            <Avatar
+              src={previewUrl || user.profileImage}
+              sx={{ width: 150, height: 150, border: '3px solid', borderColor: 'primary.main' }}
+            >
+              {user.firstName[0]}{user.lastName[0]}
+            </Avatar>
+            
+            {/* File Upload */}
+            <Box sx={{ textAlign: 'center' }}>
+              <input
+                accept="image/*"
+                style={{ display: 'none' }}
+                id="avatar-upload"
+                type="file"
+                onChange={handleFileSelect}
+              />
+              <label htmlFor="avatar-upload">
+                <Button
+                  variant="outlined"
+                  component="span"
+                  startIcon={<PhotoCamera />}
+                  sx={{ mb: 2 }}
+                >
+                  Odaberi sliku
+                </Button>
+              </label>
+              <Typography variant="body2" color="text.secondary">
+                Podržani formati: PNG, JPG, JPEG (max 5MB)
+              </Typography>
+            </Box>
+
+            {/* Preview Info */}
+            {selectedFile && (
+              <Box sx={{ textAlign: 'center' }}>
+                <Chip 
+                  label={`${selectedFile.name} (${(selectedFile.size / 1024 / 1024).toFixed(2)} MB)`}
+                  color="primary" 
+                  variant="outlined" 
+                />
+              </Box>
+            )}
+          </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setAvatarDialogOpen(false)}>Zatvori</Button>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button 
+            onClick={() => {
+              setAvatarDialogOpen(false);
+              setSelectedFile(null);
+              setPreviewUrl('');
+            }}
+          >
+            Otkaži
+          </Button>
+          <Button
+            onClick={handleAvatarUpload}
+            variant="contained"
+            disabled={!selectedFile}
+            startIcon={<Save />}
+          >
+            Sačuvaj
+          </Button>
         </DialogActions>
       </Dialog>
     </Container>
