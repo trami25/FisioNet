@@ -1,0 +1,193 @@
+// User types
+export interface User {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  birthDate?: string;
+  height?: number;
+  weight?: number;
+  jobType?: string;
+  profileImage?: string;
+  role: 'patient' | 'physiotherapist' | 'moderator' | 'admin';
+  createdAt: string;
+}
+
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  birthDate?: string;
+  height?: number;
+  weight?: number;
+  jobType?: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  userId: string;
+  user: User;
+}
+
+// Exercise types
+export interface Exercise {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  difficultyLevel: 'Beginner' | 'Intermediate' | 'Advanced';
+  durationMinutes?: number;
+  equipmentNeeded: string[];
+  instructions: string[];
+  imageUrl?: string;
+  videoUrl?: string;
+  youtubeUrl?: string;
+  targetMuscles: string[];
+  createdAt: string;
+  isSpecialized?: boolean; // For exercises assigned by physiotherapists
+}
+
+export interface ExerciseFilter {
+  category?: string;
+  difficultyLevel?: string;
+  targetMuscle?: string;
+  equipment?: string;
+  duration?: number;
+  search?: string;
+}
+
+// Appointment types
+export interface Appointment {
+  id: string;
+  patientId: string;
+  physiotherapistId: string;
+  dateTime: string;
+  duration: number; // in minutes
+  status: 'scheduled' | 'completed' | 'cancelled' | 'rescheduled';
+  notes?: string;
+  prescription?: string; // Therapy plan
+  createdAt: string;
+}
+
+export interface TimeSlot {
+  start: string;
+  end: string;
+  available: boolean;
+}
+
+export interface Physiotherapist {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  profileImage?: string;
+  specializations: string[];
+  certifications: string[];
+  biography?: string;
+  rating: number;
+  reviewCount: number;
+  availability: TimeSlot[];
+}
+
+// Forum types
+export interface ForumPost {
+  id: string;
+  title: string;
+  content: string;
+  authorId: string;
+  authorName: string;
+  category: string;
+  tags: string[];
+  likes: number;
+  dislikes: number;
+  commentCount: number;
+  isLocked: boolean;
+  isPinned: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ForumComment {
+  id: string;
+  postId: string;
+  authorId: string;
+  authorName: string;
+  content: string;
+  likes: number;
+  dislikes: number;
+  parentCommentId?: string; // For nested comments
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Chat types
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  content: string;
+  messageType: 'text' | 'image' | 'document';
+  fileUrl?: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface ChatConversation {
+  id: string;
+  participants: User[];
+  lastMessage?: ChatMessage;
+  unreadCount: number;
+  updatedAt: string;
+}
+
+// Notification types
+export interface Notification {
+  id: string;
+  userId: string;
+  type: 'appointment_reminder' | 'new_message' | 'exercise_assigned' | 'forum_reply' | 'system';
+  title: string;
+  content: string;
+  isRead: boolean;
+  actionUrl?: string;
+  createdAt: string;
+}
+
+// API Response types
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+// Form types
+export interface FormErrors {
+  [key: string]: string;
+}
+
+// Search and filter types
+export interface SearchFilters {
+  query?: string;
+  category?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+}
