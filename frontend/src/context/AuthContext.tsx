@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import { User, AuthResponse } from '../types';
 import { authService } from '../services/authService';
 
@@ -20,7 +20,7 @@ type AuthAction =
 
 const initialState: AuthState = {
   user: null,
-  token: localStorage.getItem('token'),
+  token: null,
   isAuthenticated: false,
   isLoading: false,
   error: null,
@@ -103,16 +103,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // Check if user is authenticated on mount
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      // Verify token and get user data
-      verifyToken(token);
-    }
-  }, []);
-
-  const verifyToken = async (token: string) => {
+  const verifyToken = useCallback(async (token: string) => {
     try {
       dispatch({ type: 'AUTH_START' });
       const response = await authService.verifyToken(token);
@@ -124,9 +115,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error) {
       dispatch({ type: 'AUTH_FAILURE', payload: 'Token verification failed' });
     }
-  };
+  }, []);
 
-  const login = async (email: string, password: string) => {
+  // Check if user is authenticated on mount - run only once
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      // Verify token and get user data
+      verifyToken(token);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount
+
+
+
+  const updateUser = useCallback((user: User) => {
+    dispatch({ type: 'UPDATE_USER', payload: user });
+  }, []);
+
+  const login = useCallback(async (email: string, password: string) => {
     try {
       dispatch({ type: 'AUTH_START' });
       const response = await authService.login(email, password);
@@ -138,9 +145,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error) {
       dispatch({ type: 'AUTH_FAILURE', payload: 'Login failed' });
     }
-  };
+  }, []);
 
-  const register = async (userData: any) => {
+  const register = useCallback(async (userData: any) => {
     try {
       dispatch({ type: 'AUTH_START' });
       const response = await authService.register(userData);
@@ -152,28 +159,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error) {
       dispatch({ type: 'AUTH_FAILURE', payload: 'Registration failed' });
     }
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     dispatch({ type: 'LOGOUT' });
-  };
+  }, []);
 
-  const clearError = () => {
+  const clearError = useCallback(() => {
     dispatch({ type: 'CLEAR_ERROR' });
-  };
+  }, []);
 
-  const updateUser = (user: User) => {
-    dispatch({ type: 'UPDATE_USER', payload: user });
-  };
-
-  const value: AuthContextType = {
+  const value: AuthContextType = useMemo(() => ({
     ...state,
     login,
     register,
     logout,
     clearError,
     updateUser,
-  };
+  }), [state, login, register, logout, clearError, updateUser]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
