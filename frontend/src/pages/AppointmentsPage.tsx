@@ -9,13 +9,11 @@ import {
   Chip,
   Button,
   Divider,
-  Alert,
   CircularProgress,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
 } from '@mui/material';
 import {
   AccessTime,
@@ -33,6 +31,9 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import duration from 'dayjs/plugin/duration';
 import { appointmentService } from '../services/appointmentService';
 import { Appointment, Physiotherapist } from '../types';
+import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 dayjs.extend(relativeTime);
 dayjs.extend(duration);
@@ -99,14 +100,15 @@ const Countdown: React.FC<CountdownProps> = ({ targetDate }) => {
 };
 
 export const AppointmentsPage: React.FC = () => {
+  const { user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const { showError, showSuccess } = useToast();
   const [appointments, setAppointments] = useState<AppointmentWithPhysiotherapist[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedAppointment, setSelectedAppointment] = useState<AppointmentWithPhysiotherapist | null>(null);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
-  const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
-  const [newDateTime, setNewDateTime] = useState('');
 
+  // Move all hooks before early returns
   const loadAppointments = useCallback(async () => {
     try {
       setLoading(true);
@@ -128,14 +130,13 @@ export const AppointmentsPage: React.FC = () => {
       );
 
       setAppointments(appointmentsWithPhysiotherapists);
-      setError(null);
     } catch (error) {
       console.error('Error loading appointments:', error);
-      setError('Greška pri učitavanju termina. Molimo pokušajte ponovo.');
+      showError('Greška pri učitavanju termina. Molimo pokušajte ponovo.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showError]);
 
   useEffect(() => {
     loadAppointments();
@@ -149,26 +150,42 @@ export const AppointmentsPage: React.FC = () => {
       await loadAppointments();
       setCancelDialogOpen(false);
       setSelectedAppointment(null);
+      showSuccess('Termin je uspešno otkazan.');
     } catch (error) {
       console.error('Error cancelling appointment:', error);
-      setError('Greška pri otkazivanju termina.');
+      showError('Greška pri otkazivanju termina.');
     }
   };
 
-  const handleRescheduleAppointment = async () => {
-    if (!selectedAppointment || !newDateTime) return;
+  // Only allow authenticated users
+  if (!isAuthenticated) {
+    return (
+      <Container maxWidth="lg" sx={{ py: 4, textAlign: 'center' }}>
+        <Typography variant="h6" color="text.secondary" gutterBottom>
+          Molimo prijavite se za pristup terminima.
+        </Typography>
+        <Button variant="contained" onClick={() => navigate('/login')}>
+          Prijaví se
+        </Button>
+      </Container>
+    );
+  }
 
-    try {
-      await appointmentService.rescheduleAppointment(selectedAppointment.id, newDateTime);
-      await loadAppointments();
-      setRescheduleDialogOpen(false);
-      setSelectedAppointment(null);
-      setNewDateTime('');
-    } catch (error) {
-      console.error('Error rescheduling appointment:', error);
-      setError('Greška pri pomeranju termina.');
-    }
-  };
+  // Redirect physiotherapists to their dedicated schedule page
+  if (user?.role === 'physiotherapist') {
+    return (
+      <Container maxWidth="lg" sx={{ py: 4, textAlign: 'center' }}>
+        <Typography variant="h6" color="primary" gutterBottom>
+          Kao fizioterapeut, koristite svoju stranicu rasporedo za upravljanje terminima.
+        </Typography>
+        <Button variant="contained" onClick={() => navigate('/physiotherapist-schedule')}>
+          Idí na raspored
+        </Button>
+      </Container>
+    );
+  }
+
+  // Patients can only cancel appointments, not reschedule them
 
   const getStatusColor = (status: Appointment['status']) => {
     switch (status) {
@@ -238,12 +255,6 @@ export const AppointmentsPage: React.FC = () => {
       <Typography variant="h4" gutterBottom>
         Moji Termini
       </Typography>
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
 
       {/* Upcoming Appointments */}
       <Box sx={{ mb: 4 }}>
@@ -350,32 +361,22 @@ export const AppointmentsPage: React.FC = () => {
                       </Box>
                     )}
 
-                    <Box sx={{ display: 'flex', gap: 1, mt: 3 }}>
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        size="small"
-                        startIcon={<Cancel />}
-                        onClick={() => {
-                          setSelectedAppointment(appointment);
-                          setCancelDialogOpen(true);
-                        }}
-                      >
-                        Otkaži
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<Edit />}
-                        onClick={() => {
-                          setSelectedAppointment(appointment);
-                          setNewDateTime(dayjs(appointment.dateTime).format('YYYY-MM-DDTHH:mm'));
-                          setRescheduleDialogOpen(true);
-                        }}
-                      >
-                        Pomeri
-                      </Button>
-                    </Box>
+                    {user?.role === 'patient' && (
+                      <Box sx={{ display: 'flex', gap: 1, mt: 3 }}>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          size="small"
+                          startIcon={<Cancel />}
+                          onClick={() => {
+                            setSelectedAppointment(appointment);
+                            setCancelDialogOpen(true);
+                          }}
+                        >
+                          Otkaži
+                        </Button>
+                      </Box>
+                    )}
                   </CardContent>
                 </Card>
               </Box>
@@ -491,39 +492,7 @@ export const AppointmentsPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Reschedule Dialog */}
-      <Dialog open={rescheduleDialogOpen} onClose={() => setRescheduleDialogOpen(false)}>
-        <DialogTitle>Pomeranje Termina</DialogTitle>
-        <DialogContent>
-          <Typography gutterBottom>
-            Pomeranje termina sa{' '}
-            {selectedAppointment?.physiotherapist?.firstName} {selectedAppointment?.physiotherapist?.lastName}
-          </Typography>
-          <TextField
-            label="Novo vreme"
-            type="datetime-local"
-            value={newDateTime}
-            onChange={(e) => setNewDateTime(e.target.value)}
-            fullWidth
-            sx={{ mt: 2 }}
-            InputLabelProps={{
-              shrink: true,
-            }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setRescheduleDialogOpen(false)}>
-            Odustani
-          </Button>
-          <Button 
-            onClick={handleRescheduleAppointment} 
-            variant="contained"
-            disabled={!newDateTime}
-          >
-            Pomeri Termin
-          </Button>
-        </DialogActions>
-      </Dialog>
+
     </Container>
   );
 };

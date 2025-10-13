@@ -94,14 +94,25 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </Button>
               {isAuthenticated && (
                 <>
-                  <Button
-                    color="inherit"
-                    component={Link}
-                    to="/appointments"
-                    sx={{ textTransform: 'none' }}
-                  >
-                    Termini
-                  </Button>
+                  {user?.role === 'physiotherapist' ? (
+                    <Button
+                      color="inherit"
+                      component={Link}
+                      to="/schedule"
+                      sx={{ textTransform: 'none' }}
+                    >
+                      Moj Raspored
+                    </Button>
+                  ) : (
+                    <Button
+                      color="inherit"
+                      component={Link}
+                      to="/appointments"
+                      sx={{ textTransform: 'none' }}
+                    >
+                      Termini
+                    </Button>
+                  )}
                   <Button
                     color="inherit"
                     component={Link}

@@ -47,6 +47,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs, { Dayjs } from 'dayjs';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { Physiotherapist } from '../types';
 
 interface TimeSlot {
@@ -76,7 +77,9 @@ export const AppointmentBookingPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const { showError, showSuccess } = useToast();
 
+  // All hooks must be called before any early returns
   const [physiotherapist, setPhysiotherapist] = useState<Physiotherapist | null>(null);
   const [selectedDate, setSelectedDate] = useState<Dayjs>(dayjs());
   const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([]);
@@ -87,7 +90,7 @@ export const AppointmentBookingPage: React.FC = () => {
   const [bookingStep, setBookingStep] = useState(0);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
-  // Mock data for demonstration
+  // Mock data for demonstration - must be defined before useEffect
   const mockPhysiotherapist: Physiotherapist = {
     id: id || '1',
     firstName: 'Dr. Ana',
@@ -139,6 +142,7 @@ export const AppointmentBookingPage: React.FC = () => {
     slots: generateTimeSlots(8, 16, selectedDate),
   };
 
+  // useEffect must be called before early returns
   useEffect(() => {
     // Simulate loading physiotherapist data
     setLoading(true);
@@ -147,7 +151,21 @@ export const AppointmentBookingPage: React.FC = () => {
       setWorkingHours(mockWorkingHours);
       setLoading(false);
     }, 1000);
-  }, [id, selectedDate]);
+  }, [selectedDate]);
+
+  // Restrict access to patients only
+  if (!isAuthenticated || user?.role !== 'patient') {
+    return (
+      <Container maxWidth="lg" sx={{ py: 4, textAlign: 'center' }}>
+        <Typography variant="h6" color="error" gutterBottom>
+          Samo pacijenti mogu da zakazaju termine.
+        </Typography>
+        <Button variant="contained" onClick={() => navigate('/')}>
+          Nazad na početnu
+        </Button>
+      </Container>
+    );
+  }
 
   const handleTimeSlotClick = (time: string) => {
     const slot = workingHours?.slots.find(s => s.time === time);
@@ -209,12 +227,8 @@ export const AppointmentBookingPage: React.FC = () => {
     // Simulate API call
     setTimeout(() => {
       setConfirmDialogOpen(false);
-      navigate('/appointments', { 
-        state: { 
-          message: 'Termin je uspešno zakazan! Dobićete potvrdu na email.',
-          type: 'success'
-        }
-      });
+      showSuccess('Termin je uspešno zakazan! Dobićete potvrdu na email.');
+      navigate('/appointments');
     }, 2000);
   };
 

@@ -7,7 +7,6 @@ import {
   TextField,
   Button,
   Link,
-  Alert,
   CircularProgress,
   Stepper,
   Step,
@@ -23,6 +22,7 @@ import {
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { FitnessCenter, ArrowBack, ArrowForward } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { RegisterRequest } from '../types';
 
 const steps = ['Osnovne informacije', 'Lični podaci', 'Zdravstveni podaci'];
@@ -30,6 +30,7 @@ const steps = ['Osnovne informacije', 'Lični podaci', 'Zdravstveni podaci'];
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const { register, isAuthenticated, isLoading, error, clearError } = useAuth();
+  const { showError, showSuccess } = useToast();
   
   const [activeStep, setActiveStep] = useState(0);
   const [formData, setFormData] = useState<RegisterRequest>({
@@ -47,6 +48,14 @@ export const RegisterPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
+
+  // Show error toast when error changes
+  useEffect(() => {
+    if (error) {
+      showError(error);
+      clearError();
+    }
+  }, [error, showError, clearError]);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -155,6 +164,7 @@ export const RegisterPage: React.FC = () => {
       ) as RegisterRequest;
 
       await register(cleanedData);
+      showSuccess('Nalog je uspešno kreiran! Molimo prijavite se.');
     } catch (err) {
       // Error handling is done by the auth context
     }
@@ -362,12 +372,7 @@ export const RegisterPage: React.FC = () => {
             ))}
           </Stepper>
 
-          {/* Error Alert */}
-          {error && (
-            <Alert severity="error" sx={{ mb: 3 }} onClose={clearError}>
-              {error}
-            </Alert>
-          )}
+
 
           {/* Step Content */}
           <Box sx={{ mb: 4 }}>

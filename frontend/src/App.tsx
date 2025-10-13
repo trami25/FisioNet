@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
 import { Layout } from './components/Layout/Layout';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
@@ -13,6 +14,7 @@ import { PhysiotherapistsPage } from './pages/PhysiotherapistsPage';
 import { PhysiotherapistDetailPage } from './pages/PhysiotherapistDetailPage';
 import { AppointmentBookingPage } from './pages/AppointmentBookingPage';
 import { AppointmentsPage } from './pages/AppointmentsPage';
+import { PhysiotherapistSchedulePage } from './pages/PhysiotherapistSchedulePage';
 import { ForumPage } from './pages/ForumPage';
 import { ChatPage } from './pages/ChatPage';
 import { ProfilePage } from './pages/ProfilePage';
@@ -59,7 +61,8 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
-        <Router>
+        <ToastProvider>
+          <Router>
           <Layout>
             <Routes>
               {/* Public routes */}
@@ -80,6 +83,11 @@ function App() {
               <Route path="/appointments" element={
                 <ProtectedRoute>
                   <AppointmentsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/schedule" element={
+                <ProtectedRoute>
+                  <PhysiotherapistSchedulePage />
                 </ProtectedRoute>
               } />
               <Route path="/forum" element={
@@ -103,6 +111,7 @@ function App() {
             </Routes>
           </Layout>
         </Router>
+        </ToastProvider>
       </AuthProvider>
     </ThemeProvider>
   );

@@ -7,18 +7,19 @@ import {
   TextField,
   Button,
   Link,
-  Alert,
   CircularProgress,
   Divider,
 } from '@mui/material';
 import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import { FitnessCenter } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isAuthenticated, isLoading, error, clearError } = useAuth();
+  const { showError, showSuccess } = useToast();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -84,10 +85,19 @@ export const LoginPage: React.FC = () => {
 
     try {
       await login(formData.email, formData.password);
+      showSuccess('Uspešno ste se prijavili!');
     } catch (err) {
       // Error handling is done by the auth context
     }
   };
+
+  // Show error toast when error changes
+  useEffect(() => {
+    if (error) {
+      showError(error);
+      clearError();
+    }
+  }, [error, showError, clearError]);
 
   return (
     <Container component="main" maxWidth="sm">
@@ -112,12 +122,7 @@ export const LoginPage: React.FC = () => {
             </Typography>
           </Box>
 
-          {/* Error Alert */}
-          {error && (
-            <Alert severity="error" sx={{ mb: 3 }} onClose={clearError}>
-              {error}
-            </Alert>
-          )}
+
 
           {/* Login Form */}
           <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>

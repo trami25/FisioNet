@@ -38,6 +38,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { Physiotherapist } from '../types';
+import { useAuth } from '../context/AuthContext';
 
 // Mock data for physiotherapists
 const mockPhysiotherapists: Physiotherapist[] = [
@@ -129,6 +130,9 @@ const mockPhysiotherapists: Physiotherapist[] = [
 
 export const PhysiotherapistsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
+  
+  // All hooks must be called before any early returns
   const [physiotherapists, setPhysiotherapists] = useState<Physiotherapist[]>(mockPhysiotherapists);
   const [filteredPhysiotherapists, setFilteredPhysiotherapists] = useState<Physiotherapist[]>(mockPhysiotherapists);
   const [searchTerm, setSearchTerm] = useState('');
@@ -137,12 +141,12 @@ export const PhysiotherapistsPage: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedPhysio, setSelectedPhysio] = useState<Physiotherapist | null>(null);
 
-  // Get all unique specializations
+  // Get all unique specializations - must be before useEffect
   const allSpecializations = Array.from(
     new Set(physiotherapists.flatMap(p => p.specializations))
   ).sort();
 
-  // Filter physiotherapists based on search and filters
+  // Filter physiotherapists based on search and filters - useEffect must be before early returns
   useEffect(() => {
     let filtered = physiotherapists;
 
@@ -167,7 +171,21 @@ export const PhysiotherapistsPage: React.FC = () => {
     }
 
     setFilteredPhysiotherapists(filtered);
-  }, [searchTerm, selectedSpecialization, minRating, physiotherapists]);
+  }, [physiotherapists, searchTerm, selectedSpecialization, minRating]);
+
+  // Restrict access to patients only for booking appointments
+  if (!isAuthenticated || user?.role !== 'patient') {
+    return (
+      <Container maxWidth="lg" sx={{ py: 4, textAlign: 'center' }}>
+        <Typography variant="h6" color="primary" gutterBottom>
+          Samo pacijenti mogu da pregledaju fizioterapeute za zakazivanje termina.
+        </Typography>
+        <Button variant="contained" onClick={() => navigate('/')}>
+          Nazad na početnu
+        </Button>
+      </Container>
+    );
+  }
 
   const handleBookAppointment = (physio: Physiotherapist) => {
     // Navigate to appointment booking page

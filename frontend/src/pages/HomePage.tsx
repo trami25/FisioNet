@@ -92,7 +92,7 @@ export const HomePage: React.FC = () => {
             Dobrodošli u FisioNet
           </Typography>
           <Typography variant="h5" component="h2" gutterBottom sx={{ mb: 4, opacity: 0.9 }}>
-            Vaš partnер za rehabilitaciju i zdravlje
+            Vaš partnеr za rehabilitaciju i zdravlje
           </Typography>
           <Typography variant="body1" sx={{ mb: 4, fontSize: '1.1rem', opacity: 0.9 }}>
             Platforma koja povezuje pacijente, fizioterapeute i medicinsko osoblje 

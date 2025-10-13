@@ -1,0 +1,23 @@
+services:
+  fisionet-backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fisionet-backend
+    ports:
+      # Map container ports to host ports
+      - "8001:8001"  # Auth Service
+      - "8002:8002"  # Exercise Service
+      - "8003:8003"  # Appointment Service
+      - "8004:8004"  # Forum Service
+      - "8005:8005"  # Chat Notification Service
+    environment:
+      - RUST_LOG=info
+      - ENVIRONMENT=development
+    restart: unless-stopped
+    networks:
+      - fisionet-network
+
+networks:
+  fisionet-network:
+    driver: bridge
