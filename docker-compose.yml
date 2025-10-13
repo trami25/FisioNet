@@ -1,4 +1,27 @@
 services:
+  # SQLite Database (file-based, no separate container needed)
+  # Files will be stored in volumes for persistence
+  
+  # Redis Database for Chat and Notifications
+  redis:
+    image: redis:7.2-alpine
+    container_name: fisionet-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    environment:
+      - REDIS_PASSWORD=fisionet_redis_pass
+    command: redis-server --requirepass fisionet_redis_pass --appendonly yes
+    restart: unless-stopped
+    networks:
+      - fisionet-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   fisionet-backend:
     build: 
       context: ./backend
@@ -6,14 +29,29 @@ services:
     container_name: fisionet-backend
     ports:
       # Map container ports to host ports
-      - "8001:8001"  # Auth Service
-      - "8002:8002"  # Exercise Service
-      - "8003:8003"  # Appointment Service
-      - "8004:8004"  # Forum Service
-      - "8005:8005"  # Chat Notification Service
+      - "8001:3001"  # Auth Service
+      - "8002:3002"  # Exercise Service
+      - "8003:3003"  # Appointment Service
+      - "8004:3004"  # Forum Service
+      - "8005:3005"  # Chat Notification Service
     environment:
       - RUST_LOG=info
       - ENVIRONMENT=development
+      # SQLite Database URLs (file-based)
+      - DATABASE_URL=sqlite:///app/data/fisionet.db
+      - AUTH_DATABASE_URL=sqlite:///app/data/auth.db
+      - EXERCISE_DATABASE_URL=sqlite:///app/data/exercises.db
+      - APPOINTMENT_DATABASE_URL=sqlite:///app/data/appointments.db
+      - FORUM_DATABASE_URL=sqlite:///app/data/forum.db
+      # Redis Configuration
+      - REDIS_URL=redis://:fisionet_redis_pass@redis:6379
+      - CHAT_REDIS_URL=redis://:fisionet_redis_pass@redis:6379/0
+      - NOTIFICATION_REDIS_URL=redis://:fisionet_redis_pass@redis:6379/1
+    volumes:
+      - sqlite_data:/app/data  # SQLite database files
+    depends_on:
+      redis:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - fisionet-network
@@ -21,3 +59,9 @@ services:
 networks:
   fisionet-network:
     driver: bridge
+
+volumes:
+  sqlite_data:
+    driver: local
+  redis_data:
+    driver: local

@@ -44,7 +44,7 @@ async fn main() {
         .route("/auth/verify", get(verify_token))
         .layer(CorsLayer::permissive());
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3001));
+    let addr = SocketAddr::from(([0, 0, 0, 0], 3001));
     println!("Auth service listening on {}", addr);
     
     axum::Server::bind(&addr)

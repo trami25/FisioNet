@@ -55,7 +55,7 @@ async fn main() {
         .route("/exercises/categories", get(get_categories))
         .layer(CorsLayer::permissive());
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3002));
+    let addr = SocketAddr::from(([0, 0, 0, 0], 3002));
     println!("Exercise service listening on {}", addr);
     
     axum::Server::bind(&addr)
