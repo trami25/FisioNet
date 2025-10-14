@@ -5,7 +5,7 @@ use chrono::{DateTime, Utc};
 use anyhow::Result;
 
 // User roles
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub enum UserRole {
     Patient,
     Physiotherapist,
@@ -306,5 +306,51 @@ impl User {
         User::find_by_id(pool, user_id)
             .await?
             .ok_or_else(|| anyhow::anyhow!("User not found after update"))
+    }
+
+    // Get all users (admin function)
+    pub async fn get_all(pool: &SqlitePool) -> Result<Vec<User>> {
+        let users = sqlx::query(
+            "SELECT id, email, password_hash, first_name, last_name, phone, birth_date, height, weight, job_type, profile_image, role, created_at, updated_at FROM users ORDER BY created_at DESC"
+        )
+        .fetch_all(pool)
+        .await?;
+
+        let mut result = Vec::new();
+        for row in users {
+            let role_str: String = row.get("role");
+            let role = role_str.parse::<UserRole>()
+                .map_err(|_| anyhow::anyhow!("Invalid role in database: {}", role_str))?;
+
+            let user = User {
+                id: row.get("id"),
+                email: row.get("email"),
+                password_hash: row.get("password_hash"),
+                first_name: row.get("first_name"),
+                last_name: row.get("last_name"),
+                phone: row.get("phone"),
+                birth_date: row.get("birth_date"),
+                height: row.get("height"),
+                weight: row.get("weight"),
+                job_type: row.get("job_type"),
+                profile_image: row.get("profile_image"),
+                role,
+                created_at: row.get("created_at"),
+                updated_at: row.get("updated_at"),
+            };
+            result.push(user);
+        }
+
+        Ok(result)
+    }
+
+    // Delete user (admin function)
+    pub async fn delete(pool: &SqlitePool, user_id: &str) -> Result<()> {
+        sqlx::query("DELETE FROM users WHERE id = ?")
+            .bind(user_id)
+            .execute(pool)
+            .await?;
+
+        Ok(())
     }
 }

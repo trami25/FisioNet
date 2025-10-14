@@ -1,5 +1,5 @@
 use axum::{
-    routing::{get, post, put},
+    routing::{get, post, put, delete},
     Router, Extension,
     extract::DefaultBodyLimit,
 };
@@ -43,6 +43,11 @@ async fn main() -> Result<()> {
         .route("/auth/verify", get(verify_token))
         .route("/auth/profile", get(get_profile))
         .route("/auth/profile", put(update_profile))
+        // Admin routes
+        .route("/admin/users", get(get_all_users))
+        .route("/admin/users", post(create_user))
+        .route("/admin/users/:user_id", delete(delete_user))
+        .route("/admin/users/stats", get(get_user_stats))
         .layer(DefaultBodyLimit::max(10 * 1024 * 1024)) // 10MB limit
         .layer(Extension(pool))
         .layer(CorsLayer::permissive());

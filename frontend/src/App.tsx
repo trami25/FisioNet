@@ -18,6 +18,7 @@ import { PhysiotherapistSchedulePage } from './pages/PhysiotherapistSchedulePage
 import { ForumPage } from './pages/ForumPage';
 import { ChatPage } from './pages/ChatPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { AdminPanelPage } from './pages/AdminPanelPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import './App.css';
 
@@ -103,6 +104,11 @@ function App() {
               <Route path="/profile" element={
                 <ProtectedRoute>
                   <ProfilePage />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin" element={
+                <ProtectedRoute>
+                  <AdminPanelPage />
                 </ProtectedRoute>
               } />
               

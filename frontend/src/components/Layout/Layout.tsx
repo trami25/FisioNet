@@ -20,7 +20,8 @@ import {
   Message,
   ExitToApp,
   Person,
-  Settings
+  Settings,
+  AdminPanelSettings
 } from '@mui/icons-material';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -50,6 +51,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const handleProfile = () => {
     navigate('/profile');
+    handleClose();
+  };
+
+  const handleAdmin = () => {
+    navigate('/admin');
     handleClose();
   };
 
@@ -121,6 +127,16 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   >
                     Forum
                   </Button>
+                  {user?.role === 'admin' && (
+                    <Button
+                      color="inherit"
+                      component={Link}
+                      to="/admin"
+                      sx={{ textTransform: 'none' }}
+                    >
+                      Admin Panel
+                    </Button>
+                  )}
                 </>
               )}
             </Box>
@@ -183,6 +199,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     <Person sx={{ mr: 1 }} />
                     Profil
                   </MenuItem>
+                  {user?.role === 'admin' && (
+                    <MenuItem onClick={handleAdmin}>
+                      <AdminPanelSettings sx={{ mr: 1 }} />
+                      Admin Panel
+                    </MenuItem>
+                  )}
                   <MenuItem onClick={handleClose}>
                     <Settings sx={{ mr: 1 }} />
                     Podešavanja
