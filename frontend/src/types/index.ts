@@ -17,13 +17,14 @@ export interface User {
 export interface RegisterRequest {
   email: string;
   password: string;
-  firstName: string;
-  lastName: string;
+  first_name: string;  // Changed to match backend
+  last_name: string;   // Changed to match backend
   phone?: string;
-  birthDate?: string;
+  birth_date?: string; // Changed to match backend
   height?: number;
   weight?: number;
-  jobType?: string;
+  job_type?: string;   // Changed to match backend
+  role?: string;       // Added role option
 }
 
 export interface LoginRequest {
@@ -33,8 +34,25 @@ export interface LoginRequest {
 
 export interface AuthResponse {
   token: string;
-  userId: string;
-  user: User;
+  user_id: string;     // Changed to match backend
+  email: string;
+  role: string;
+  first_name: string;  // Changed to match backend
+  last_name: string;   // Changed to match backend
+}
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  first_name: string;  // Changed to match backend
+  last_name: string;   // Changed to match backend
+  phone?: string;
+  birth_date?: string; // Changed to match backend
+  height?: number;
+  weight?: number;
+  job_type?: string;   // Changed to match backend
+  role: string;
+  created_at: string;  // Changed to match backend
 }
 
 // Exercise types

@@ -1,0 +1,26 @@
+# Development Dockerfile with hot reload
+FROM rust:1.90
+
+WORKDIR /app
+
+# Install cargo-watch for hot reload
+RUN cargo install cargo-watch
+
+# Copy only Cargo files first for dependency caching
+COPY Cargo.toml Cargo.lock ./
+COPY */Cargo.toml ./
+
+# Create dummy main files and build dependencies
+RUN mkdir -p auth_service/src exercise_service/src appointment_service/src forum_service/src chat_notification_service/src
+RUN echo "fn main() {}" > auth_service/src/main.rs
+RUN echo "fn main() {}" > exercise_service/src/main.rs  
+RUN echo "fn main() {}" > appointment_service/src/main.rs
+RUN echo "fn main() {}" > forum_service/src/main.rs
+RUN echo "fn main() {}" > chat_notification_service/src/main.rs
+RUN cargo build --release
+
+# Copy actual source code
+COPY . .
+
+# Run with hot reload
+CMD ["cargo", "watch", "-x", "run --release --all"]

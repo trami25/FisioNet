@@ -38,7 +38,14 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
       localStorage.setItem('token', action.payload.token);
       return {
         ...state,
-        user: action.payload.user,
+        user: {
+          id: action.payload.user_id,
+          email: action.payload.email,
+          firstName: action.payload.first_name,
+          lastName: action.payload.last_name,
+          role: action.payload.role as any,
+          createdAt: new Date().toISOString(),
+        },
         token: action.payload.token,
         isAuthenticated: true,
         isLoading: false,
@@ -106,9 +113,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const verifyToken = useCallback(async (token: string) => {
     try {
       dispatch({ type: 'AUTH_START' });
-      const response = await authService.verifyToken(token);
-      if (response.success && response.data) {
-        dispatch({ type: 'AUTH_SUCCESS', payload: response.data });
+      const isValid = await authService.verifyToken();
+      if (isValid) {
+        // Get user profile after successful verification
+        const profileResponse = await authService.getCurrentUser();
+        if (profileResponse.success && profileResponse.data) {
+          // Convert backend format to frontend format
+          const userData = {
+            token,
+            user_id: profileResponse.data.id,
+            email: profileResponse.data.email,
+            first_name: profileResponse.data.first_name,
+            last_name: profileResponse.data.last_name,
+            role: profileResponse.data.role,
+          };
+          dispatch({ type: 'AUTH_SUCCESS', payload: userData });
+        } else {
+          dispatch({ type: 'AUTH_FAILURE', payload: 'Failed to get user profile' });
+        }
       } else {
         dispatch({ type: 'AUTH_FAILURE', payload: 'Invalid token' });
       }

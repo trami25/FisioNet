@@ -36,13 +36,14 @@ export const RegisterPage: React.FC = () => {
   const [formData, setFormData] = useState<RegisterRequest>({
     email: '',
     password: '',
-    firstName: '',
-    lastName: '',
+    first_name: '',
+    last_name: '',
     phone: '',
-    birthDate: '',
+    birth_date: '',
     height: undefined,
     weight: undefined,
-    jobType: '',
+    job_type: '',
+    role: 'patient',
   });
 
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -117,13 +118,13 @@ export const RegisterPage: React.FC = () => {
         break;
 
       case 1: // Personal info
-        if (!formData.firstName) {
-          errors.firstName = 'Ime je obavezno';
+        if (!formData.first_name) {
+          errors.first_name = 'Ime je obavezno';
         }
-        if (!formData.lastName) {
-          errors.lastName = 'Prezime je obavezno';
+        if (!formData.last_name) {
+          errors.last_name = 'Prezime je obavezno';
         }
-        if (formData.phone && !/^[\d\s\+\-\(\)]+$/.test(formData.phone)) {
+        if (formData.phone && !/^[\d\s+\-()]+$/.test(formData.phone)) {
           errors.phone = 'Nevaljan format telefona';
         }
         break;
@@ -244,21 +245,21 @@ export const RegisterPage: React.FC = () => {
               <TextField
                 required
                 fullWidth
-                label="Ime"
-                value={formData.firstName}
-                onChange={(e) => handleInputChange('firstName', e.target.value)}
-                error={!!formErrors.firstName}
-                helperText={formErrors.firstName}
+              label="Ime"
+              value={formData.first_name}
+              onChange={(e) => handleInputChange('first_name', e.target.value)}
+              error={!!formErrors.first_name}
+              helperText={formErrors.first_name}
                 disabled={isLoading}
               />
               <TextField
                 required
                 fullWidth
-                label="Prezime"
-                value={formData.lastName}
-                onChange={(e) => handleInputChange('lastName', e.target.value)}
-                error={!!formErrors.lastName}
-                helperText={formErrors.lastName}
+              label="Prezime"
+              value={formData.last_name}
+              onChange={(e) => handleInputChange('last_name', e.target.value)}
+              error={!!formErrors.last_name}
+              helperText={formErrors.last_name}
                 disabled={isLoading}
               />
             </Box>
@@ -275,8 +276,8 @@ export const RegisterPage: React.FC = () => {
               fullWidth
               label="Datum rođenja"
               type="date"
-              value={formData.birthDate}
-              onChange={(e) => handleInputChange('birthDate', e.target.value)}
+              value={formData.birth_date}
+              onChange={(e) => handleInputChange('birth_date', e.target.value)}
               InputLabelProps={{ shrink: true }}
               helperText="Opcionalno"
               disabled={isLoading}
@@ -317,9 +318,9 @@ export const RegisterPage: React.FC = () => {
             <FormControl fullWidth>
               <InputLabel>Tip posla</InputLabel>
               <Select
-                value={formData.jobType || ''}
+                value={formData.job_type || ''}
                 label="Tip posla"
-                onChange={(e) => handleInputChange('jobType', e.target.value)}
+                onChange={(e) => handleInputChange('job_type', e.target.value)}
                 disabled={isLoading}
               >
                 <MenuItem value="">Izaberite tip posla</MenuItem>

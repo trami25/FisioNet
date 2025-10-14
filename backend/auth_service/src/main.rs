@@ -1,84 +1,55 @@
 use axum::{
     routing::{get, post},
-    http::StatusCode,
-    Json, Router,
+    Router, Extension,
 };
-use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 use tower_http::cors::CorsLayer;
 use tracing_subscriber;
+use anyhow::Result;
 
-#[derive(Serialize, Deserialize)]
-struct LoginRequest {
-    email: String,
-    password: String,
-}
+mod models;
+mod handlers;
+mod utils;
+mod config;
+mod database;
 
-#[derive(Serialize, Deserialize)]
-struct RegisterRequest {
-    email: String,
-    password: String,
-    first_name: String,
-    last_name: String,
-    phone: Option<String>,
-    birth_date: Option<String>,
-    height: Option<f64>,
-    weight: Option<f64>,
-    job_type: Option<String>,
-}
-
-#[derive(Serialize)]
-struct AuthResponse {
-    token: String,
-    user_id: String,
-}
+use config::Config;
+use database::{create_pool, run_migrations};
+use handlers::*;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<()> {
+    // Initialize logging
     tracing_subscriber::fmt::init();
 
+    // Load configuration
+    let config = Config::from_env();
+    tracing::info!("Starting Auth Service with config: {:?}", config);
+
+    // Initialize database
+    let pool = create_pool(&config.database_url).await?;
+    tracing::info!("Database pool created");
+
+    // Run migrations
+    run_migrations(&pool).await?;
+    tracing::info!("Database migrations completed");
+
+    // Build application routes
     let app = Router::new()
         .route("/", get(root))
         .route("/auth/login", post(login))
         .route("/auth/register", post(register))
         .route("/auth/verify", get(verify_token))
+        .route("/auth/profile", get(get_profile))
+        .layer(Extension(pool))
         .layer(CorsLayer::permissive());
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3001));
-    println!("Auth service listening on {}", addr);
+    // Start server
+    let addr = SocketAddr::from(([0, 0, 0, 0], config.server_port));
+    tracing::info!("Auth service listening on {}", addr);
     
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await
-        .unwrap();
-}
-
-async fn root() -> &'static str {
-    "Auth Service - FisioNet"
-}
-
-async fn login(Json(payload): Json<LoginRequest>) -> Result<Json<AuthResponse>, StatusCode> {
-    // TODO: Implement actual login logic with database
-    if payload.email == "test@example.com" && payload.password == "password" {
-        Ok(Json(AuthResponse {
-            token: "dummy_jwt_token".to_string(),
-            user_id: "user_123".to_string(),
-        }))
-    } else {
-        Err(StatusCode::UNAUTHORIZED)
-    }
-}
-
-async fn register(Json(payload): Json<RegisterRequest>) -> Result<Json<AuthResponse>, StatusCode> {
-    // TODO: Implement actual registration logic with database
-    println!("Register request: {:?}", payload.email);
-    Ok(Json(AuthResponse {
-        token: "dummy_jwt_token".to_string(),
-        user_id: "new_user_123".to_string(),
-    }))
-}
-
-async fn verify_token() -> Result<StatusCode, StatusCode> {
-    // TODO: Implement JWT token verification
-    Ok(StatusCode::OK)
+    let listener = tokio::net::TcpListener::bind(addr).await?;
+    axum::serve(listener, app).await?;
+    
+    Ok(())
 }

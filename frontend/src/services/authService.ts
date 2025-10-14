@@ -1,7 +1,7 @@
 import axios from 'axios';
-import { ApiResponse, AuthResponse, LoginRequest, RegisterRequest, User } from '../types';
+import { ApiResponse, AuthResponse, RegisterRequest, UserProfile } from '../types';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8001';
 
 // Create axios instance with default config
 const apiClient = axios.create({
@@ -32,6 +32,7 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401) {
       // Token expired or invalid
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -41,218 +42,118 @@ apiClient.interceptors.response.use(
 export const authService = {
   async login(email: string, password: string): Promise<ApiResponse<AuthResponse>> {
     try {
-      // Mock successful login for demo/testing purposes
-      if (email && password) {
-        // Create mock user based on email
-        let role: 'patient' | 'physiotherapist' | 'admin' | 'moderator' = 'patient';
-        let firstName = 'Test';
-        let lastName = 'User';
-
-        if (email.includes('physio')) {
-          role = 'physiotherapist';
-          firstName = 'Dr. Ana';
-          lastName = 'Petrović';
-        } else if (email.includes('admin')) {
-          role = 'admin';
-          firstName = 'Admin';
-          lastName = 'User';
-        } else if (email.includes('moderator')) {
-          role = 'moderator';
-          firstName = 'Moderator';
-          lastName = 'User';
-        } else {
-          firstName = 'Marko';
-          lastName = 'Nikolić';
-        }
-
-        const mockUser: User = {
-          id: 'user_' + Math.random().toString(36).substr(2, 9),
-          email,
-          firstName,
-          lastName,
-          phone: '+381 60 123 4567',
-          role,
-          createdAt: new Date().toISOString(),
-          birthDate: '1990-01-01',
-          height: 175,
-          weight: 70,
-          jobType: 'Office work',
-        };
-
-        const mockResponse: AuthResponse = {
-          token: 'mock_jwt_token_' + Date.now(),
-          userId: mockUser.id,
-          user: mockUser,
-        };
-
-        return {
-          success: true,
-          data: mockResponse,
-        };
-      }
-
-      // Fallback to actual API call if backend is running
-      const response = await apiClient.post<AuthResponse>('/auth/login', {
+      const response = await apiClient.post('/auth/login', {
         email,
         password,
       });
+
+      const authData = response.data;
       
+      // Store token and user data
+      localStorage.setItem('token', authData.token);
+      localStorage.setItem('user', JSON.stringify({
+        id: authData.user_id,
+        email: authData.email,
+        firstName: authData.first_name,
+        lastName: authData.last_name,
+        role: authData.role,
+      }));
+
       return {
         success: true,
-        data: response.data,
+        data: authData,
       };
     } catch (error: any) {
+      console.error('Login error:', error);
       return {
         success: false,
-        error: error.response?.data?.message || 'Neispravni podaci za prijavu',
+        error: error.response?.data?.message || 'Login failed',
       };
     }
   },
 
-  async register(userData: RegisterRequest): Promise<ApiResponse<AuthResponse>> {
+  async register(data: RegisterRequest): Promise<ApiResponse<AuthResponse>> {
     try {
-      // Mock successful registration for demo/testing purposes
-      const mockUser: User = {
-        id: 'user_' + Math.random().toString(36).substr(2, 9),
-        email: userData.email,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        phone: userData.phone,
-        role: 'patient', // Default role for new registrations
-        createdAt: new Date().toISOString(),
-        birthDate: userData.birthDate,
-        height: userData.height,
-        weight: userData.weight,
-        jobType: userData.jobType,
-      };
-
-      const mockResponse: AuthResponse = {
-        token: 'mock_jwt_token_' + Date.now(),
-        userId: mockUser.id,
-        user: mockUser,
-      };
-
-      return {
-        success: true,
-        data: mockResponse,
-      };
-
-      // Fallback to actual API call if backend is running
-      // const response = await apiClient.post<AuthResponse>('/auth/register', userData);
-      // return {
-      //   success: true,
-      //   data: response.data,
-      // };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.response?.data?.message || 'Registracija nije uspešna',
-      };
-    }
-  },
-
-  async verifyToken(token: string): Promise<ApiResponse<AuthResponse>> {
-    try {
-      // Mock token verification for demo purposes
-      if (token.startsWith('mock_jwt_token_')) {
-        // Create a mock user from stored token (in real app, this would be decoded from JWT)
-        const mockUser: User = {
-          id: 'user_stored',
-          email: 'stored@example.com',
-          firstName: 'Stored',
-          lastName: 'User',
-          role: 'patient',
-          createdAt: new Date().toISOString(),
-        };
-
-        const authResponse: AuthResponse = {
-          token,
-          userId: mockUser.id,
-          user: mockUser,
-        };
-
-        return {
-          success: true,
-          data: authResponse,
-        };
-      }
-
-      // Fallback to actual API call
-      const response = await apiClient.get<User>('/auth/verify', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const response = await apiClient.post('/auth/register', {
+        email: data.email,
+        password: data.password,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        phone: data.phone,
+        birth_date: data.birth_date,
+        height: data.height,
+        weight: data.weight,
+        job_type: data.job_type,
+        role: data.role || 'patient',
       });
+
+      const authData = response.data;
       
-      const authResponse: AuthResponse = {
-        token,
-        userId: response.data.id,
-        user: response.data,
-      };
+      // Store token and user data
+      localStorage.setItem('token', authData.token);
+      localStorage.setItem('user', JSON.stringify({
+        id: authData.user_id,
+        email: authData.email,
+        firstName: authData.first_name,
+        lastName: authData.last_name,
+        role: authData.role,
+      }));
 
       return {
         success: true,
-        data: authResponse,
+        data: authData,
       };
     } catch (error: any) {
+      console.error('Registration error:', error);
       return {
         success: false,
-        error: error.response?.data?.message || 'Token verification failed',
+        error: error.response?.data?.message || 'Registration failed',
       };
     }
   },
 
-  async getCurrentUser(): Promise<ApiResponse<User>> {
+  async getCurrentUser(): Promise<ApiResponse<UserProfile>> {
     try {
-      const response = await apiClient.get<User>('/auth/me');
-      
+      const response = await apiClient.get('/auth/profile');
       return {
         success: true,
         data: response.data,
       };
     } catch (error: any) {
+      console.error('Get current user error:', error);
       return {
         success: false,
-        error: error.response?.data?.message || 'Failed to get user data',
+        error: error.response?.data?.message || 'Failed to fetch user profile',
       };
     }
   },
 
-  async updateProfile(userData: Partial<User>): Promise<ApiResponse<User>> {
+  async verifyToken(): Promise<boolean> {
     try {
-      const response = await apiClient.put<User>('/auth/profile', userData);
-      
-      return {
-        success: true,
-        data: response.data,
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.response?.data?.message || 'Profile update failed',
-      };
+      await apiClient.get('/auth/verify');
+      return true;
+    } catch (error) {
+      console.error('Token verification failed:', error);
+      return false;
     }
   },
 
-  async changePassword(currentPassword: string, newPassword: string): Promise<ApiResponse<void>> {
-    try {
-      await apiClient.post('/auth/change-password', {
-        currentPassword,
-        newPassword,
-      });
-      
-      return {
-        success: true,
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.response?.data?.message || 'Password change failed',
-      };
-    }
-  },
-
-  logout() {
+  logout(): void {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
+  },
+
+  getStoredUser(): any {
+    const userData = localStorage.getItem('user');
+    return userData ? JSON.parse(userData) : null;
+  },
+
+  getToken(): string | null {
+    return localStorage.getItem('token');
+  },
+
+  isAuthenticated(): boolean {
+    return !!this.getToken();
   },
 };

@@ -1,0 +1,58 @@
+services:
+  # Redis Database for Chat and Notifications
+  redis:
+    image: redis:7.2-alpine
+    container_name: fisionet-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    environment:
+      - REDIS_PASSWORD=fisionet_redis_pass
+    command: redis-server --requirepass fisionet_redis_pass --appendonly yes
+    restart: unless-stopped
+    networks:
+      - fisionet-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Backend services (for hybrid development)
+  fisionet-backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fisionet-backend
+    ports:
+      - "8001:3001"  # Auth Service
+      - "8002:3002"  # Exercise Service
+      - "8003:3003"  # Appointment Service
+      - "8004:3004"  # Forum Service
+      - "8005:3005"  # Chat Notification Service
+    environment:
+      - RUST_LOG=info
+      - ENVIRONMENT=development
+      - DATABASE_URL=sqlite:///app/data/fisionet.db
+      - REDIS_URL=redis://:fisionet_redis_pass@redis:6379
+    volumes:
+      - sqlite_data:/app/data
+      # Development: Mount source for hot reload
+      - ./backend:/app/src
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - fisionet-network
+
+networks:
+  fisionet-network:
+    driver: bridge
+
+volumes:
+  sqlite_data:
+    driver: local
+  redis_data:
+    driver: local
