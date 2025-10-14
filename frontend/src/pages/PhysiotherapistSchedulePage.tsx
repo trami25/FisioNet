@@ -46,13 +46,19 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import duration from 'dayjs/plugin/duration';
 import { appointmentService } from '../services/appointmentService';
-import { Appointment, User } from '../types';
+import { NewAppointment, User } from '../types';
 
 dayjs.extend(relativeTime);
 dayjs.extend(duration);
 
-interface AppointmentWithPatient extends Appointment {
+interface AppointmentWithPatient extends NewAppointment {
   patient?: User;
+  // Dodatna polja za kompatibilnost sa starim kodom
+  patientId: string;
+  physiotherapistId: string;
+  dateTime: string;
+  duration: number;
+  createdAt: string;
 }
 
 interface CountdownProps {
@@ -125,22 +131,20 @@ export const PhysiotherapistSchedulePage: React.FC = () => {
   const loadAppointments = useCallback(async () => {
     try {
       setLoading(true);
-      const appointmentsData = await appointmentService.getPhysiotherapistAppointments();
+      const appointmentsData = await appointmentService.getMyAppointments();
       
-      // Load patient details for each appointment
-      const appointmentsWithPatients = await Promise.all(
-        appointmentsData.map(async (appointment) => {
-          try {
-            const patient = await appointmentService.getPatient(appointment.patientId);
-            return { ...appointment, patient };
-          } catch (error) {
-            console.error('Error loading patient:', error);
-            return appointment;
-          }
-        })
-      );
-
-      setAppointments(appointmentsWithPatients);
+      // Za sada samo koristimo appointments bez dodatnih patient detalja
+      // Jer appointmentService.getPatient() ne postoji
+      setAppointments(appointmentsData.map(apt => ({
+        ...apt,
+        // Mapiramo nova polja na stara polja za kompatibilnost
+        patientId: apt.patient_id,
+        physiotherapistId: apt.physiotherapist_id,
+        dateTime: `${apt.appointment_date} ${apt.start_time}`,
+        duration: 20, // default duration
+        createdAt: new Date().toISOString(), // placeholder
+        patient: undefined // placeholder
+      })));
       setError(null);
     } catch (error) {
       console.error('Error loading appointments:', error);
@@ -158,9 +162,7 @@ export const PhysiotherapistSchedulePage: React.FC = () => {
     if (!selectedAppointment) return;
 
     try {
-      await appointmentService.updateAppointment(selectedAppointment.id, {
-        status: 'completed',
-        prescription: prescription || undefined,
+      await appointmentService.completeAppointment(selectedAppointment.id, {
         notes: appointmentNotes || selectedAppointment.notes,
       });
       await loadAppointments();
@@ -174,7 +176,7 @@ export const PhysiotherapistSchedulePage: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status: Appointment['status']) => {
+  const getStatusColor = (status: NewAppointment['status']) => {
     switch (status) {
       case 'scheduled':
         return 'primary';
@@ -182,14 +184,12 @@ export const PhysiotherapistSchedulePage: React.FC = () => {
         return 'success';
       case 'cancelled':
         return 'error';
-      case 'rescheduled':
-        return 'warning';
       default:
         return 'default';
     }
   };
 
-  const getStatusText = (status: Appointment['status']) => {
+  const getStatusText = (status: NewAppointment['status']) => {
     switch (status) {
       case 'scheduled':
         return 'Zakazan';
@@ -197,8 +197,6 @@ export const PhysiotherapistSchedulePage: React.FC = () => {
         return 'Završen';
       case 'cancelled':
         return 'Otkazan';
-      case 'rescheduled':
-        return 'Pomeren';
       default:
         return status;
     }
@@ -339,7 +337,7 @@ export const PhysiotherapistSchedulePage: React.FC = () => {
                             color="success"
                             onClick={() => {
                               setSelectedAppointment(appointment);
-                              setPrescription(appointment.prescription || '');
+                              setPrescription(appointment.notes || '');
                               setAppointmentNotes(appointment.notes || '');
                               setPrescriptionDialog(true);
                             }}
@@ -509,13 +507,13 @@ export const PhysiotherapistSchedulePage: React.FC = () => {
                       </Box>
                     )}
 
-                    {appointment.prescription && (
+                    {appointment.notes && (
                       <Box>
                         <Typography variant="subtitle2" gutterBottom color="success.main">
-                          Preporuka:
+                          Napomene:
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {appointment.prescription}
+                          {appointment.notes}
                         </Typography>
                       </Box>
                     )}

@@ -49,6 +49,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { Physiotherapist } from '../types';
+import { appointmentService } from '../services/appointmentService';
 
 interface TimeSlot {
   time: string;
@@ -74,13 +75,14 @@ interface AppointmentRequest {
 }
 
 export const AppointmentBookingPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id, patientId } = useParams<{ id: string; patientId?: string }>();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const { showError, showSuccess } = useToast();
 
   // All hooks must be called before any early returns
   const [physiotherapist, setPhysiotherapist] = useState<Physiotherapist | null>(null);
+  const [patient, setPatient] = useState<any>(null); // For when physiotherapist books for patient
   const [selectedDate, setSelectedDate] = useState<Dayjs>(dayjs());
   const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([]);
   const [workingHours, setWorkingHours] = useState<WorkingHours | null>(null);
@@ -89,6 +91,11 @@ export const AppointmentBookingPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [bookingStep, setBookingStep] = useState(0);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+
+  // Determine booking mode
+  const isPhysioBookingForPatient = user?.role === 'physiotherapist' && patientId;
+  const isPatientBooking = user?.role === 'patient' && !patientId;
+  const isPatientBookingWithPhysio = user?.role === 'patient' && id; // Patient booking with specific physiotherapist
 
   // Mock data for demonstration - must be defined before useEffect
   const mockPhysiotherapist: Physiotherapist = {
@@ -144,21 +151,95 @@ export const AppointmentBookingPage: React.FC = () => {
 
   // useEffect must be called before early returns
   useEffect(() => {
-    // Simulate loading physiotherapist data
-    setLoading(true);
-    setTimeout(() => {
-      setPhysiotherapist(mockPhysiotherapist);
-      setWorkingHours(mockWorkingHours);
-      setLoading(false);
-    }, 1000);
-  }, [selectedDate]);
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        // Load physiotherapist data
+        let physioToLoad = mockPhysiotherapist;
+        
+        if (isPhysioBookingForPatient) {
+          // When physio books for patient, use current user (physiotherapist) data
+          physioToLoad = {
+            ...mockPhysiotherapist,
+            id: user?.id || 'physio-001',
+            firstName: user?.firstName || 'Milan',
+            lastName: user?.lastName || 'Mitrović',
+            email: user?.email || 'milan.mitrovic@fisionet.rs',
+          };
+        } else if (isPatientBookingWithPhysio && id) {
+          // When patient books with specific physiotherapist, use physiotherapist ID from params
+          physioToLoad = {
+            ...mockPhysiotherapist,
+            id: id,
+          };
+        }
+        
+        // If physiotherapist is booking for patient, load patient data too
+        if (isPhysioBookingForPatient && patientId) {
+          setPatient({
+            id: patientId,
+            firstName: 'Nikola',
+            lastName: 'Mitrović',
+            email: 'nikola.mitrovic@gmail.com'
+          });
+        }
 
-  // Restrict access to patients only
-  if (!isAuthenticated || user?.role !== 'patient') {
+        setPhysiotherapist(physioToLoad);
+        
+        // Load real available slots from API
+        try {
+          const slots = await appointmentService.getAvailableSlots(
+            physioToLoad.id, 
+            selectedDate.format('YYYY-MM-DD')
+          );
+          
+          setWorkingHours({
+            day: selectedDate.format('dddd'),
+            start: '08:00',
+            end: '16:00',
+            slots: slots.map(slot => ({
+              time: slot.time,
+              available: slot.available,
+              booked: slot.booked,
+              reason: slot.booked ? 'Zauzeto' : undefined,
+            }))
+          });
+        } catch (slotsError) {
+          console.error('Error loading slots:', slotsError);
+          // Fallback to mock data if API fails
+          setWorkingHours(mockWorkingHours);
+          showError('Greška pri učitavanju dostupnih termina. Prikazujem demo podatke.');
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+        showError('Greška pri učitavanju podataka');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [selectedDate, isPhysioBookingForPatient, isPatientBookingWithPhysio, patientId, id, user, showError]);
+
+  // Restrict access based on role and context
+  if (!isAuthenticated) {
     return (
       <Container maxWidth="lg" sx={{ py: 4, textAlign: 'center' }}>
         <Typography variant="h6" color="error" gutterBottom>
-          Samo pacijenti mogu da zakazaju termine.
+          Morate biti ulogovani da biste zakazali termine.
+        </Typography>
+        <Button variant="contained" onClick={() => navigate('/login')}>
+          Prijavite se
+        </Button>
+      </Container>
+    );
+  }
+
+  if (!isPatientBooking && !isPhysioBookingForPatient && !isPatientBookingWithPhysio) {
+    return (
+      <Container maxWidth="lg" sx={{ py: 4, textAlign: 'center' }}>
+        <Typography variant="h6" color="error" gutterBottom>
+          Nemate dozvolu za pristup ovoj stranici.
         </Typography>
         <Button variant="contained" onClick={() => navigate('/')}>
           Nazad na početnu
@@ -207,29 +288,47 @@ export const AppointmentBookingPage: React.FC = () => {
   };
 
   const handleBookAppointment = async () => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !user) {
       navigate('/login');
       return;
     }
 
-    const appointmentRequest: AppointmentRequest = {
-      physiotherapistId: physiotherapist!.id,
-      date: selectedDate.format('YYYY-MM-DD'),
-      timeSlots: selectedTimeSlots,
-      reason: appointmentReason,
-      duration: selectedTimeSlots.length * 20,
-      notes: appointmentNotes,
-    };
+    if (!physiotherapist) {
+      showError('Greška: Podaci o fizioterapeutu nisu dostupni');
+      return;
+    }
 
-    // Mock booking API call
-    console.log('Booking appointment:', appointmentRequest);
-    
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      setLoading(true);
+
+      // Convert selected time slots to appointment datetime
+      const appointmentDate = selectedDate.format('YYYY-MM-DD');
+      const startTime = selectedTimeSlots[0]; // First selected slot (e.g., "09:00")
+
+      const appointmentData = {
+        patient_id: isPhysioBookingForPatient ? patientId! : user.id,
+        physiotherapist_id: isPhysioBookingForPatient ? (id || physiotherapist.id) : physiotherapist.id,
+        appointment_date: appointmentDate,
+        start_time: startTime,
+      };
+
+      await appointmentService.createAppointment(appointmentData);
+      
       setConfirmDialogOpen(false);
-      showSuccess('Termin je uspešno zakazan! Dobićete potvrdu na email.');
-      navigate('/appointments');
-    }, 2000);
+      showSuccess(`Termin je uspešno zakazan${isPhysioBookingForPatient ? ' za pacijenta' : ''}! Dobićete potvrdu na email.`);
+      
+      if (isPhysioBookingForPatient) {
+        navigate('/patients');
+      } else {
+        navigate('/appointments');
+      }
+      
+    } catch (error) {
+      console.error('Error booking appointment:', error);
+      showError('Greška pri zakazivanju termina. Molimo pokušajte ponovo.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getTotalDuration = () => selectedTimeSlots.length * 20;
@@ -277,10 +376,16 @@ export const AppointmentBookingPage: React.FC = () => {
         <Box sx={{ mb: 4 }}>
           <Button 
             startIcon={<ArrowBack />} 
-            onClick={() => navigate(`/physiotherapists/${id}`)}
+            onClick={() => {
+              if (isPhysioBookingForPatient) {
+                navigate('/patients');
+              } else {
+                navigate(`/physiotherapists/${id}`);
+              }
+            }}
             sx={{ mb: 2 }}
           >
-            Nazad na profil
+            {isPhysioBookingForPatient ? 'Nazad na pacijente' : 'Nazad na profil'}
           </Button>
           
           <Paper elevation={2} sx={{ p: 3 }}>
@@ -291,11 +396,19 @@ export const AppointmentBookingPage: React.FC = () => {
               />
               <Box>
                 <Typography variant="h4" gutterBottom>
-                  Zakazivanje termina
+                  {isPhysioBookingForPatient ? 'Zakazivanje termina za pacijenta' : 'Zakazivanje termina'}
                 </Typography>
                 <Typography variant="h6" color="primary">
-                  {physiotherapist.firstName} {physiotherapist.lastName}
+                  {isPhysioBookingForPatient 
+                    ? `Fizioterapeut: ${physiotherapist.firstName} ${physiotherapist.lastName}`
+                    : `${physiotherapist.firstName} ${physiotherapist.lastName}`
+                  }
                 </Typography>
+                {isPhysioBookingForPatient && patient && (
+                  <Typography variant="subtitle1" color="text.secondary">
+                    Pacijent: {patient.firstName} {patient.lastName}
+                  </Typography>
+                )}
                 <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
                   {physiotherapist.specializations.slice(0, 2).map((spec) => (
                     <Chip key={spec} label={spec} size="small" />
@@ -503,8 +616,11 @@ export const AppointmentBookingPage: React.FC = () => {
                           <Person />
                         </ListItemIcon>
                         <ListItemText 
-                          primary="Fizioterapeut"
-                          secondary={`${physiotherapist.firstName} ${physiotherapist.lastName}`}
+                          primary={isPhysioBookingForPatient ? 'Pacijent' : 'Fizioterapeut'}
+                          secondary={isPhysioBookingForPatient 
+                            ? `${patient?.firstName} ${patient?.lastName}`
+                            : `${physiotherapist.firstName} ${physiotherapist.lastName}`
+                          }
                         />
                       </ListItem>
                     </List>
@@ -530,7 +646,7 @@ export const AppointmentBookingPage: React.FC = () => {
                     onClick={() => setConfirmDialogOpen(true)}
                     sx={{ mb: 2 }}
                   >
-                    Zakaži termin
+                    {isPhysioBookingForPatient ? 'Zakaži termin za pacijenta' : 'Zakaži termin'}
                   </Button>
 
                   {!isAuthenticated && (
@@ -559,7 +675,11 @@ export const AppointmentBookingPage: React.FC = () => {
                 <strong>Detalji termina:</strong>
               </Typography>
               <Typography variant="body2">
-                <strong>Fizioterapeut:</strong> {physiotherapist.firstName} {physiotherapist.lastName}
+                <strong>{isPhysioBookingForPatient ? 'Pacijent' : 'Fizioterapeut'}:</strong> {
+                  isPhysioBookingForPatient 
+                    ? `${patient?.firstName} ${patient?.lastName}`
+                    : `${physiotherapist.firstName} ${physiotherapist.lastName}`
+                }
               </Typography>
               <Typography variant="body2">
                 <strong>Datum:</strong> {selectedDate.format('dddd, DD.MM.YYYY')}

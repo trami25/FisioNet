@@ -81,6 +81,11 @@ function App() {
                   <AppointmentBookingPage />
                 </ProtectedRoute>
               } />
+              <Route path="/patients/:patientId/book/:id" element={
+                <ProtectedRoute>
+                  <AppointmentBookingPage />
+                </ProtectedRoute>
+              } />
               
               {/* Protected routes - require authentication */}
               <Route path="/appointments" element={

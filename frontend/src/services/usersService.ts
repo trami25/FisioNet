@@ -86,6 +86,20 @@ class UsersService {
 
     return response.json();
   }
+
+  // Dobijanje korisnika po ID-u (generička metoda)
+  async getUserById(id: string): Promise<User> {
+    const response = await fetch(`${this.baseUrl}/users/${id}`, {
+      headers: this.getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Greška pri dobijanju korisnika');
+    }
+
+    return response.json();
+  }
 }
 
 export const usersService = new UsersService();

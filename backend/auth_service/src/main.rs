@@ -53,6 +53,7 @@ async fn main() -> Result<()> {
         .route("/users/patients", get(get_patients))
         .route("/users/by-role", get(get_users_by_role))
         .route("/users/profile/:user_id", get(get_user_profile))
+        .route("/users/:user_id", get(get_user_profile)) // Alias for profile endpoint
         .layer(DefaultBodyLimit::max(10 * 1024 * 1024)) // 10MB limit
         .layer(Extension(pool))
         .layer(CorsLayer::permissive());

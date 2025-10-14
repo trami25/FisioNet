@@ -248,3 +248,34 @@ export interface SearchFilters {
   page?: number;
   limit?: number;
 }
+
+// New Appointment types for our appointment service
+export interface NewAppointment {
+  id: string;
+  patient_id: string;
+  physiotherapist_id: string;
+  appointment_date: string;  // YYYY-MM-DD
+  start_time: string;        // HH:MM
+  end_time: string;          // HH:MM
+  status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
+  notes?: string;
+  patient_notes?: string;
+}
+
+export interface CreateAppointmentRequest {
+  patient_id: string;
+  physiotherapist_id: string;
+  appointment_date: string;  // YYYY-MM-DD
+  start_time: string;        // HH:MM
+}
+
+export interface AppointmentResponse {
+  message: string;
+  appointment?: NewAppointment;
+}
+
+export interface AvailableSlot {
+  time: string;
+  available: boolean;
+  booked: boolean;
+}

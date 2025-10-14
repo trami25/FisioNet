@@ -88,7 +88,8 @@ export const PatientsPage: React.FC = () => {
   };
 
   const handleScheduleAppointment = (patient: User) => {
-    navigate(`/schedule/appointment/${patient.id}`);
+    // Navigate to booking page where physiotherapist books for patient
+    navigate(`/patients/${patient.id}/book/${user?.id}`);
   };
 
   // Show access restriction for non-physiotherapists
