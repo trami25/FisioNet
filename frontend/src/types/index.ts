@@ -1,4 +1,16 @@
 // User types
+export interface Specialization {
+  name: string;
+  description?: string;
+}
+
+export interface Certification {
+  name: string;
+  issuer: string;
+  date_obtained: string;  // Changed to match backend
+  expiry_date?: string;   // Changed to match backend
+}
+
 export interface User {
   id: string;
   email: string;
@@ -11,6 +23,11 @@ export interface User {
   jobType?: string;
   profileImage?: string;
   role: 'patient' | 'physiotherapist' | 'moderator' | 'admin';
+  specializations?: Specialization[];
+  certifications?: Certification[];
+  yearsOfExperience?: number;
+  education?: string;
+  bio?: string;
   createdAt: string;
 }
 
@@ -25,6 +42,22 @@ export interface RegisterRequest {
   weight?: number;
   job_type?: string;   // Changed to match backend
   role?: string;       // Added role option
+}
+
+export interface UpdateProfileRequest {
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  birth_date?: string;
+  height?: number;
+  weight?: number;
+  job_type?: string;
+  profile_image?: string;
+  specializations?: Specialization[];
+  certifications?: Certification[];
+  years_of_experience?: number;
+  education?: string;
+  bio?: string;
 }
 
 export interface LoginRequest {
@@ -53,6 +86,11 @@ export interface UserProfile {
   job_type?: string;   // Changed to match backend
   profile_image?: string; // Added profile image
   role: string;
+  specializations?: Specialization[];
+  certifications?: Certification[];
+  years_of_experience?: number;
+  education?: string;
+  bio?: string;
   created_at: string;  // Changed to match backend
 }
 

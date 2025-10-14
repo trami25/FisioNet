@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container,
   Typography,
@@ -19,6 +19,12 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Divider,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemAvatar,
+  Tooltip,
 } from '@mui/material';
 import {
   Edit,
@@ -32,9 +38,17 @@ import {
   Settings,
   Security,
   Notifications,
+  Add,
+  Delete,
+  WorkspacePremium,
+  School,
+  Star,
 } from '@mui/icons-material';
+
 import { useAuth } from '../context/AuthContext';
-import { User } from '../types';
+import { useToast } from '../context/ToastContext';
+import { User, UserProfile, Specialization, Certification, UpdateProfileRequest } from '../types';
+import { profileService } from '../services/profileService';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -60,6 +74,7 @@ function TabPanel(props: TabPanelProps) {
 
 export const ProfilePage: React.FC = () => {
   const { user, updateUser, updateProfile } = useAuth();
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<User>>(user || {});
@@ -67,6 +82,17 @@ export const ProfilePage: React.FC = () => {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
+  
+  // Professional data for physiotherapists
+  const [currentProfile, setCurrentProfile] = useState<UserProfile | null>(null);
+  const [professionalData, setProfessionalData] = useState<UpdateProfileRequest>({
+    specializations: [],
+    certifications: [],
+    education: '',
+    years_of_experience: undefined,
+    bio: '',
+  });
+  
   const [settings, setSettings] = useState({
     notifications: {
       email: true,
@@ -87,6 +113,93 @@ export const ProfilePage: React.FC = () => {
       timezone: 'Europe/Belgrade',
     },
   });
+
+  // Load current profile data for physiotherapists
+  useEffect(() => {
+    const loadCurrentProfile = async () => {
+      try {
+        const profile = await profileService.getCurrentProfile();
+        setCurrentProfile(profile);
+        setProfessionalData({
+          specializations: profile.specializations || [],
+          certifications: profile.certifications || [],
+          education: profile.education || '',
+          years_of_experience: profile.years_of_experience,
+          bio: profile.bio || '',
+        });
+      } catch (error) {
+        console.error('Failed to load profile:', error);
+      }
+    };
+
+    if (user?.role === 'physiotherapist') {
+      loadCurrentProfile();
+    }
+  }, [user]);
+
+  // Professional data management functions
+  const addSpecialization = () => {
+    setProfessionalData(prev => ({
+      ...prev,
+      specializations: [
+        ...(prev.specializations || []),
+        { name: '', description: '' }
+      ]
+    }));
+  };
+
+  const updateSpecialization = (index: number, field: keyof Specialization, value: string) => {
+    setProfessionalData(prev => ({
+      ...prev,
+      specializations: prev.specializations?.map((spec, i) => 
+        i === index ? { ...spec, [field]: value } : spec
+      )
+    }));
+  };
+
+  const removeSpecialization = (index: number) => {
+    setProfessionalData(prev => ({
+      ...prev,
+      specializations: prev.specializations?.filter((_, i) => i !== index)
+    }));
+  };
+
+  const addCertification = () => {
+    setProfessionalData(prev => ({
+      ...prev,
+      certifications: [
+        ...(prev.certifications || []),
+        { name: '', issuer: '', date_obtained: '', expiry_date: '' }
+      ]
+    }));
+  };
+
+  const updateCertification = (index: number, field: keyof Certification, value: string) => {
+    setProfessionalData(prev => ({
+      ...prev,
+      certifications: prev.certifications?.map((cert, i) => 
+        i === index ? { ...cert, [field]: value } : cert
+      )
+    }));
+  };
+
+  const removeCertification = (index: number) => {
+    setProfessionalData(prev => ({
+      ...prev,
+      certifications: prev.certifications?.filter((_, i) => i !== index)
+    }));
+  };
+
+  const saveProfessionalData = async () => {
+    try {
+      await profileService.updateProfile(professionalData);
+      const updatedProfile = await profileService.getCurrentProfile();
+      setCurrentProfile(updatedProfile);
+      showToast('Profesionalne informacije su uspešno ažurirane', 'success');
+    } catch (error: any) {
+      showToast(error.message || 'Greška pri ažuriranju profesionalnih informacija', 'error');
+    }
+  };
 
   if (!user) {
     return (
@@ -336,6 +449,7 @@ export const ProfilePage: React.FC = () => {
           <Tab label="Osnovne informacije" />
           <Tab label="Statistike" />
           <Tab label="Dostignuća" />
+          {user.role === 'physiotherapist' && <Tab label="Profesionalne informacije" />}
           <Tab label="Podešavanja" />
         </Tabs>
       </Box>
@@ -530,7 +644,173 @@ export const ProfilePage: React.FC = () => {
         </Box>
       </TabPanel>
 
-      <TabPanel value={activeTab} index={3}>
+      {/* Professional Information Tab - Only for Physiotherapists */}
+      {user.role === 'physiotherapist' && (
+        <TabPanel value={activeTab} index={3}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {/* Professional Summary */}
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>Profesionalne informacije</Typography>
+                
+                {/* Education */}
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="subtitle1" gutterBottom>Obrazovanje</Typography>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={2}
+                    value={professionalData.education || ''}
+                    onChange={(e) => setProfessionalData(prev => ({ ...prev, education: e.target.value }))}
+                    placeholder="Unesite informacije o vašem obrazovanju..."
+                  />
+                </Box>
+
+                {/* Years of Experience */}
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="subtitle1" gutterBottom>Godine iskustva</Typography>
+                  <TextField
+                    type="number"
+                    value={professionalData.years_of_experience || ''}
+                    onChange={(e) => setProfessionalData(prev => ({ ...prev, years_of_experience: parseInt(e.target.value) || undefined }))}
+                    placeholder="Broj godina iskustva"
+                    sx={{ width: 200 }}
+                  />
+                </Box>
+
+                {/* Bio */}
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="subtitle1" gutterBottom>O meni</Typography>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={3}
+                    value={professionalData.bio || ''}
+                    onChange={(e) => setProfessionalData(prev => ({ ...prev, bio: e.target.value }))}
+                    placeholder="Kratko opišite sebe, vaše iskustvo i pristup fizioterapiji..."
+                  />
+                </Box>
+              </CardContent>
+            </Card>
+
+            {/* Specializations */}
+            <Card>
+              <CardContent>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6">Specijalizacije</Typography>
+                  <Button startIcon={<Add />} onClick={addSpecialization} variant="outlined">
+                    Dodaj specijalizaciju
+                  </Button>
+                </Box>
+                
+                {professionalData.specializations && professionalData.specializations.length > 0 ? (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {professionalData.specializations.map((spec, index) => (
+                      <Box key={index} sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                        <TextField
+                          label="Naziv specijalizacije"
+                          value={spec.name}
+                          onChange={(e) => updateSpecialization(index, 'name', e.target.value)}
+                          fullWidth
+                        />
+                        <TextField
+                          label="Opis"
+                          value={spec.description || ''}
+                          onChange={(e) => updateSpecialization(index, 'description', e.target.value)}
+                          fullWidth
+                          multiline
+                        />
+                        <IconButton onClick={() => removeSpecialization(index)} color="error">
+                          <Delete />
+                        </IconButton>
+                      </Box>
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    Nema dodanih specijalizacija. Kliknite na "Dodaj specijalizaciju" da doddate novu.
+                  </Typography>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Certifications */}
+            <Card>
+              <CardContent>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6">Sertifikati</Typography>
+                  <Button startIcon={<Add />} onClick={addCertification} variant="outlined">
+                    Dodaj sertifikat
+                  </Button>
+                </Box>
+                
+                {professionalData.certifications && professionalData.certifications.length > 0 ? (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    {professionalData.certifications.map((cert, index) => (
+                      <Box key={index} sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
+                        <Box sx={{ display: 'flex', gap: 1, mb: 2, alignItems: 'flex-start' }}>
+                          <TextField
+                            label="Naziv sertifikata"
+                            value={cert.name}
+                            onChange={(e) => updateCertification(index, 'name', e.target.value)}
+                            fullWidth
+                          />
+                          <IconButton onClick={() => removeCertification(index)} color="error">
+                            <Delete />
+                          </IconButton>
+                        </Box>
+                        <TextField
+                          label="Izdavač"
+                          value={cert.issuer}
+                          onChange={(e) => updateCertification(index, 'issuer', e.target.value)}
+                          fullWidth
+                          sx={{ mb: 2 }}
+                        />
+                        <Box sx={{ display: 'flex', gap: 2 }}>
+                          <TextField
+                            label="Datum izdavanja"
+                            type="date"
+                            value={cert.date_obtained}
+                            onChange={(e) => updateCertification(index, 'date_obtained', e.target.value)}
+                            fullWidth
+                            InputLabelProps={{ shrink: true }}
+                          />
+                          <TextField
+                            label="Datum isteka (opcionalno)"
+                            type="date"
+                            value={cert.expiry_date || ''}
+                            onChange={(e) => updateCertification(index, 'expiry_date', e.target.value)}
+                            fullWidth
+                            InputLabelProps={{ shrink: true }}
+                          />
+                        </Box>
+                      </Box>
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    Nema dodanih sertifikata. Kliknite na "Dodaj sertifikat" da doddate novi.
+                  </Typography>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Save Button */}
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+              <Button 
+                variant="contained" 
+                size="large" 
+                onClick={saveProfessionalData}
+                startIcon={<Save />}
+              >
+                Sačuvaj profesionalne informacije
+              </Button>
+            </Box>
+          </Box>
+        </TabPanel>
+      )}
+
+      <TabPanel value={activeTab} index={user.role === 'physiotherapist' ? 4 : 3}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           {/* Notification Settings */}
           <Card>

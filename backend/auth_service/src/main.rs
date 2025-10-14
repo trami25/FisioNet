@@ -16,7 +16,7 @@ mod database;
 
 use config::Config;
 use database::{create_pool, run_migrations};
-use handlers::*;
+use handlers::{auth::*, admin::*, users::{get_physiotherapists, get_patients, get_users_by_role, get_user_profile}};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -48,6 +48,11 @@ async fn main() -> Result<()> {
         .route("/admin/users", post(create_user))
         .route("/admin/users/:user_id", delete(delete_user))
         .route("/admin/users/stats", get(get_user_stats))
+        // User routes for role-based access
+        .route("/users/physiotherapists", get(get_physiotherapists))
+        .route("/users/patients", get(get_patients))
+        .route("/users/by-role", get(get_users_by_role))
+        .route("/users/profile/:user_id", get(get_user_profile))
         .layer(DefaultBodyLimit::max(10 * 1024 * 1024)) // 10MB limit
         .layer(Extension(pool))
         .layer(CorsLayer::permissive());

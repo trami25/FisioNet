@@ -359,11 +359,15 @@ export const AppointmentBookingPage: React.FC = () => {
                   Dostupni termini:
                 </Typography>
                 <Box sx={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', 
+                  display: 'flex', 
+                  flexWrap: 'wrap',
                   gap: 1,
                   maxHeight: '400px',
                   overflowY: 'auto',
+                  '& > button': {
+                    flex: '0 0 120px',
+                    minWidth: '120px'
+                  }
                 }}>
                   {workingHours?.slots.map((slot) => (
                     <Button

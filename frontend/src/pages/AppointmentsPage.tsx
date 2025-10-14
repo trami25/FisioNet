@@ -273,12 +273,13 @@ export const AppointmentsPage: React.FC = () => {
           </Card>
         ) : (
           <Box sx={{ 
-            display: 'grid', 
-            gridTemplateColumns: { 
-              xs: '1fr', 
-              md: 'repeat(2, 1fr)' 
-            }, 
-            gap: 3 
+            display: 'flex', 
+            flexWrap: 'wrap',
+            gap: 3,
+            '& > *': {
+              flex: '1 1 300px',
+              maxWidth: '48%'
+            }
           }}>
             {upcomingAppointments.map((appointment) => (
               <Box key={appointment.id}>
@@ -402,12 +403,13 @@ export const AppointmentsPage: React.FC = () => {
           </Card>
         ) : (
           <Box sx={{ 
-            display: 'grid', 
-            gridTemplateColumns: { 
-              xs: '1fr', 
-              md: 'repeat(2, 1fr)' 
-            }, 
-            gap: 3 
+            display: 'flex', 
+            flexWrap: 'wrap',
+            gap: 3,
+            '& > *': {
+              flex: '1 1 300px',
+              maxWidth: '48%'
+            }
           }}>
             {pastAppointments.map((appointment) => (
               <Box key={appointment.id}>

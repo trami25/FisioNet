@@ -183,7 +183,15 @@ export const HomePage: React.FC = () => {
           i održavanje zdravlja kroz stručno vođene programe.
         </Typography>
 
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 4 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexWrap: 'wrap', 
+          gap: 4,
+          '& > *': {
+            flex: '1 1 200px',
+            maxWidth: { xs: '100%', sm: '48%', md: '23%' }
+          }
+        }}>
           {features.map((feature, index) => (
             <Card
               key={index}
@@ -232,7 +240,16 @@ export const HomePage: React.FC = () => {
             Zašto izabrati FisioNet?
           </Typography>
           
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 4, mt: 2 }}>
+          <Box sx={{ 
+            display: 'flex', 
+            flexWrap: 'wrap', 
+            gap: 4, 
+            mt: 2,
+            '& > *': {
+              flex: '1 1 250px',
+              maxWidth: { xs: '100%', md: '33%' }
+            }
+          }}>
             {benefits.map((benefit, index) => (
               <Box key={index} sx={{ textAlign: 'center', p: 2 }}>
                 <Box sx={{ mb: 2 }}>

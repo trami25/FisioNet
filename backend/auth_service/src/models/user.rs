@@ -4,6 +4,22 @@ use uuid::Uuid;
 use chrono::{DateTime, Utc};
 use anyhow::Result;
 
+// Specialization for physiotherapists
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Specialization {
+    pub name: String,
+    pub description: Option<String>,
+}
+
+// Certification for physiotherapists  
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Certification {
+    pub name: String,
+    pub issuer: String,
+    pub date_obtained: String,
+    pub expiry_date: Option<String>,
+}
+
 // User roles
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub enum UserRole {
@@ -49,6 +65,11 @@ pub struct User {
     pub job_type: Option<String>,
     pub profile_image: Option<String>,
     pub role: UserRole,
+    pub specializations: Option<Vec<Specialization>>,
+    pub certifications: Option<Vec<Certification>>,
+    pub years_of_experience: Option<i32>,
+    pub education: Option<String>,
+    pub bio: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -70,6 +91,11 @@ pub struct UpdateUserRequest {
     pub weight: Option<f64>,
     pub job_type: Option<String>,
     pub profile_image: Option<String>,
+    pub specializations: Option<Vec<Specialization>>,
+    pub certifications: Option<Vec<Certification>>,
+    pub years_of_experience: Option<i32>,
+    pub education: Option<String>,
+    pub bio: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -84,6 +110,11 @@ pub struct RegisterRequest {
     pub weight: Option<f64>,
     pub job_type: Option<String>,
     pub role: Option<String>, // defaults to "patient"
+    pub specializations: Option<Vec<Specialization>>,
+    pub certifications: Option<Vec<Certification>>,
+    pub years_of_experience: Option<i32>,
+    pub education: Option<String>,
+    pub bio: Option<String>,
 }
 
 // Response models
@@ -110,6 +141,11 @@ pub struct UserProfile {
     pub job_type: Option<String>,
     pub profile_image: Option<String>,
     pub role: String,
+    pub specializations: Option<Vec<Specialization>>,
+    pub certifications: Option<Vec<Certification>>,
+    pub years_of_experience: Option<i32>,
+    pub education: Option<String>,
+    pub bio: Option<String>,
     pub created_at: DateTime<Utc>,
 }
 
@@ -133,9 +169,20 @@ impl User {
         weight: Option<f64>,
         job_type: Option<String>,
         role: UserRole,
+        specializations: Option<Vec<Specialization>>,
+        certifications: Option<Vec<Certification>>,
+        years_of_experience: Option<i32>,
+        education: Option<String>,
+        bio: Option<String>,
     ) -> Result<User> {
         let user_id = Uuid::new_v4().to_string();
         let now = Utc::now();
+
+        // Serialize vectors to JSON strings
+        let specializations_json = specializations.as_ref()
+            .map(|s| serde_json::to_string(s).unwrap_or_else(|_| "[]".to_string()));
+        let certifications_json = certifications.as_ref()
+            .map(|c| serde_json::to_string(c).unwrap_or_else(|_| "[]".to_string()));
 
         let user = User {
             id: user_id.clone(),
@@ -150,14 +197,19 @@ impl User {
             job_type: job_type.clone(),
             profile_image: None, // Default to None for new users
             role: role.clone(),
+            specializations,
+            certifications,
+            years_of_experience,
+            education: education.clone(),
+            bio: bio.clone(),
             created_at: now,
             updated_at: now,
         };
 
         sqlx::query(
             r#"
-            INSERT INTO users (id, email, password_hash, first_name, last_name, phone, birth_date, height, weight, job_type, profile_image, role, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO users (id, email, password_hash, first_name, last_name, phone, birth_date, height, weight, job_type, profile_image, role, specializations, certifications, years_of_experience, education, bio, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             "#
         )
         .bind(&user.id)
@@ -172,6 +224,11 @@ impl User {
         .bind(&user.job_type)
         .bind(&user.profile_image)
         .bind(&user.role.to_string())
+        .bind(&specializations_json)
+        .bind(&certifications_json)
+        .bind(&user.years_of_experience)
+        .bind(&user.education)
+        .bind(&user.bio)
         .bind(&user.created_at)
         .bind(&user.updated_at)
         .execute(pool)
@@ -182,13 +239,19 @@ impl User {
 
     pub async fn find_by_email(pool: &SqlitePool, email: &str) -> Result<Option<User>> {
         let user_row = sqlx::query(
-            "SELECT id, email, password_hash, first_name, last_name, phone, birth_date, height, weight, job_type, profile_image, role, created_at, updated_at FROM users WHERE email = ?"
+            "SELECT id, email, password_hash, first_name, last_name, phone, birth_date, height, weight, job_type, profile_image, role, specializations, certifications, years_of_experience, education, bio, created_at, updated_at FROM users WHERE email = ?"
         )
         .bind(email)
         .fetch_optional(pool)
         .await?;
 
         if let Some(row) = user_row {
+            // Parse JSON fields
+            let specializations: Option<Vec<Specialization>> = row.get::<Option<String>, _>("specializations")
+                .and_then(|s| serde_json::from_str(&s).ok());
+            let certifications: Option<Vec<Certification>> = row.get::<Option<String>, _>("certifications")
+                .and_then(|s| serde_json::from_str(&s).ok());
+
             let user = User {
                 id: row.get("id"),
                 email: row.get("email"),
@@ -202,6 +265,11 @@ impl User {
                 job_type: row.get("job_type"),
                 profile_image: row.get("profile_image"),
                 role: row.get::<String, _>("role").parse().unwrap_or(UserRole::Patient),
+                specializations,
+                certifications,
+                years_of_experience: row.get("years_of_experience"),
+                education: row.get("education"),
+                bio: row.get("bio"),
                 created_at: row.get("created_at"),
                 updated_at: row.get("updated_at"),
             };
@@ -213,13 +281,19 @@ impl User {
 
     pub async fn find_by_id(pool: &SqlitePool, user_id: &str) -> Result<Option<User>> {
         let user_row = sqlx::query(
-            "SELECT id, email, password_hash, first_name, last_name, phone, birth_date, height, weight, job_type, profile_image, role, created_at, updated_at FROM users WHERE id = ?"
+            "SELECT id, email, password_hash, first_name, last_name, phone, birth_date, height, weight, job_type, profile_image, role, specializations, certifications, years_of_experience, education, bio, created_at, updated_at FROM users WHERE id = ?"
         )
         .bind(user_id)
         .fetch_optional(pool)
         .await?;
 
         if let Some(row) = user_row {
+            // Parse JSON fields
+            let specializations: Option<Vec<Specialization>> = row.get::<Option<String>, _>("specializations")
+                .and_then(|s| serde_json::from_str(&s).ok());
+            let certifications: Option<Vec<Certification>> = row.get::<Option<String>, _>("certifications")
+                .and_then(|s| serde_json::from_str(&s).ok());
+
             let user = User {
                 id: row.get("id"),
                 email: row.get("email"),
@@ -233,6 +307,11 @@ impl User {
                 job_type: row.get("job_type"),
                 profile_image: row.get("profile_image"),
                 role: row.get::<String, _>("role").parse().unwrap_or(UserRole::Patient),
+                specializations,
+                certifications,
+                years_of_experience: row.get("years_of_experience"),
+                education: row.get("education"),
+                bio: row.get("bio"),
                 created_at: row.get("created_at"),
                 updated_at: row.get("updated_at"),
             };
@@ -263,6 +342,11 @@ impl User {
             job_type: self.job_type.clone(),
             profile_image: self.profile_image.clone(),
             role: self.role.to_string(),
+            specializations: self.specializations.clone(),
+            certifications: self.certifications.clone(),
+            years_of_experience: self.years_of_experience,
+            education: self.education.clone(),
+            bio: self.bio.clone(),
             created_at: self.created_at,
         }
     }
@@ -273,6 +357,12 @@ impl User {
         update_data: UpdateUserRequest,
     ) -> Result<User> {
         let now = Utc::now();
+
+        // Serialize vectors to JSON strings
+        let specializations_json = update_data.specializations.as_ref()
+            .map(|s| serde_json::to_string(s).unwrap_or_else(|_| "[]".to_string()));
+        let certifications_json = update_data.certifications.as_ref()
+            .map(|c| serde_json::to_string(c).unwrap_or_else(|_| "[]".to_string()));
 
         sqlx::query(
             r#"
@@ -285,6 +375,11 @@ impl User {
                 weight = COALESCE(?, weight),
                 job_type = COALESCE(?, job_type),
                 profile_image = COALESCE(?, profile_image),
+                specializations = COALESCE(?, specializations),
+                certifications = COALESCE(?, certifications),
+                years_of_experience = COALESCE(?, years_of_experience),
+                education = COALESCE(?, education),
+                bio = COALESCE(?, bio),
                 updated_at = ?
             WHERE id = ?
             "#
@@ -297,6 +392,11 @@ impl User {
         .bind(&update_data.weight)
         .bind(&update_data.job_type)
         .bind(&update_data.profile_image)
+        .bind(&specializations_json)
+        .bind(&certifications_json)
+        .bind(&update_data.years_of_experience)
+        .bind(&update_data.education)
+        .bind(&update_data.bio)
         .bind(&now)
         .bind(user_id)
         .execute(pool)
@@ -311,7 +411,7 @@ impl User {
     // Get all users (admin function)
     pub async fn get_all(pool: &SqlitePool) -> Result<Vec<User>> {
         let users = sqlx::query(
-            "SELECT id, email, password_hash, first_name, last_name, phone, birth_date, height, weight, job_type, profile_image, role, created_at, updated_at FROM users ORDER BY created_at DESC"
+            "SELECT id, email, password_hash, first_name, last_name, phone, birth_date, height, weight, job_type, profile_image, role, specializations, certifications, years_of_experience, education, bio, created_at, updated_at FROM users ORDER BY created_at DESC"
         )
         .fetch_all(pool)
         .await?;
@@ -321,6 +421,12 @@ impl User {
             let role_str: String = row.get("role");
             let role = role_str.parse::<UserRole>()
                 .map_err(|_| anyhow::anyhow!("Invalid role in database: {}", role_str))?;
+
+            // Parse JSON fields
+            let specializations: Option<Vec<Specialization>> = row.get::<Option<String>, _>("specializations")
+                .and_then(|s| serde_json::from_str(&s).ok());
+            let certifications: Option<Vec<Certification>> = row.get::<Option<String>, _>("certifications")
+                .and_then(|s| serde_json::from_str(&s).ok());
 
             let user = User {
                 id: row.get("id"),
@@ -335,6 +441,59 @@ impl User {
                 job_type: row.get("job_type"),
                 profile_image: row.get("profile_image"),
                 role,
+                specializations,
+                certifications,
+                years_of_experience: row.get("years_of_experience"),
+                education: row.get("education"),
+                bio: row.get("bio"),
+                created_at: row.get("created_at"),
+                updated_at: row.get("updated_at"),
+            };
+            result.push(user);
+        }
+
+        Ok(result)
+    }
+
+    // Get users by role
+    pub async fn get_by_role(pool: &SqlitePool, role: &UserRole) -> Result<Vec<User>> {
+        let users = sqlx::query(
+            "SELECT id, email, password_hash, first_name, last_name, phone, birth_date, height, weight, job_type, profile_image, role, specializations, certifications, years_of_experience, education, bio, created_at, updated_at FROM users WHERE role = ? ORDER BY first_name, last_name"
+        )
+        .bind(role.to_string())
+        .fetch_all(pool)
+        .await?;
+
+        let mut result = Vec::new();
+        for row in users {
+            let role_str: String = row.get("role");
+            let user_role = role_str.parse::<UserRole>()
+                .map_err(|_| anyhow::anyhow!("Invalid role in database: {}", role_str))?;
+
+            // Parse JSON fields
+            let specializations: Option<Vec<Specialization>> = row.get::<Option<String>, _>("specializations")
+                .and_then(|s| serde_json::from_str(&s).ok());
+            let certifications: Option<Vec<Certification>> = row.get::<Option<String>, _>("certifications")
+                .and_then(|s| serde_json::from_str(&s).ok());
+
+            let user = User {
+                id: row.get("id"),
+                email: row.get("email"),
+                password_hash: row.get("password_hash"),
+                first_name: row.get("first_name"),
+                last_name: row.get("last_name"),
+                phone: row.get("phone"),
+                birth_date: row.get("birth_date"),
+                height: row.get("height"),
+                weight: row.get("weight"),
+                job_type: row.get("job_type"),
+                profile_image: row.get("profile_image"),
+                role: user_role,
+                specializations,
+                certifications,
+                years_of_experience: row.get("years_of_experience"),
+                education: row.get("education"),
+                bio: row.get("bio"),
                 created_at: row.get("created_at"),
                 updated_at: row.get("updated_at"),
             };

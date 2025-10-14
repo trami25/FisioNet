@@ -26,7 +26,6 @@ import {
   ListItemSecondaryAction,
   IconButton,
   Tooltip,
-  Grid,
 } from '@mui/material';
 import {
   AccessTime,
@@ -376,12 +375,13 @@ export const PhysiotherapistSchedulePage: React.FC = () => {
             </Card>
           ) : (
             <Box sx={{ 
-              display: 'grid', 
-              gridTemplateColumns: { 
-                xs: '1fr', 
-                md: 'repeat(2, 1fr)' 
-              }, 
-              gap: 3 
+              display: 'flex', 
+              flexWrap: 'wrap',
+              gap: 3,
+              '& > *': {
+                flex: '1 1 300px',
+                maxWidth: '48%'
+              }
             }}>
               {upcomingAppointments
                 .sort((a, b) => dayjs(a.dateTime).valueOf() - dayjs(b.dateTime).valueOf())
@@ -470,12 +470,13 @@ export const PhysiotherapistSchedulePage: React.FC = () => {
             </Card>
           ) : (
             <Box sx={{ 
-              display: 'grid', 
-              gridTemplateColumns: { 
-                xs: '1fr', 
-                md: 'repeat(2, 1fr)' 
-              }, 
-              gap: 3 
+              display: 'flex', 
+              flexWrap: 'wrap',
+              gap: 3,
+              '& > *': {
+                flex: '1 1 300px',
+                maxWidth: '48%'
+              }
             }}>
               {completedAppointments.map((appointment) => (
                 <Card key={appointment.id} sx={{ opacity: 0.9 }}>

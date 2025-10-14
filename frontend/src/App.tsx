@@ -18,7 +18,9 @@ import { PhysiotherapistSchedulePage } from './pages/PhysiotherapistSchedulePage
 import { ForumPage } from './pages/ForumPage';
 import { ChatPage } from './pages/ChatPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { UserProfilePage } from './pages/UserProfilePage';
 import { AdminPanelPage } from './pages/AdminPanelPage';
+import { PatientsPage } from './pages/PatientsPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import './App.css';
 
@@ -106,9 +108,19 @@ function App() {
                   <ProfilePage />
                 </ProtectedRoute>
               } />
+              <Route path="/profile/:userId" element={
+                <ProtectedRoute>
+                  <UserProfilePage />
+                </ProtectedRoute>
+              } />
               <Route path="/admin" element={
                 <ProtectedRoute>
                   <AdminPanelPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/patients" element={
+                <ProtectedRoute>
+                  <PatientsPage />
                 </ProtectedRoute>
               } />
               

@@ -195,6 +195,11 @@ pub async fn create_user(
         payload.weight,
         payload.job_type,
         user_role,
+        payload.specializations,
+        payload.certifications,
+        payload.years_of_experience,
+        payload.education,
+        payload.bio,
     )
     .await
     .map_err(|e| {

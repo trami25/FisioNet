@@ -135,6 +135,11 @@ pub async fn register(
         payload.weight,
         payload.job_type,
         role,
+        payload.specializations,
+        payload.certifications,
+        payload.years_of_experience,
+        payload.education,
+        payload.bio,
     )
     .await
     .map_err(|e| {
