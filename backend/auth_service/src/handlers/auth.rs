@@ -319,3 +319,40 @@ pub async fn get_profile(
 
     Ok(Json(user.to_profile()))
 }
+
+pub async fn update_profile(
+    Extension(pool): Extension<SqlitePool>,
+    headers: HeaderMap,
+    Json(payload): Json<UpdateUserRequest>,
+) -> Result<Json<UserProfile>, (StatusCode, Json<ErrorResponse>)> {
+    let token = extract_bearer_token(&headers)?;
+    
+    let claims = verify_jwt_token(token).map_err(|e| {
+        tracing::warn!("Token verification failed: {}", e);
+        (
+            StatusCode::UNAUTHORIZED,
+            Json(ErrorResponse {
+                error: "invalid_token".to_string(),
+                message: "Invalid or expired token".to_string(),
+            }),
+        )
+    })?;
+
+    // Update user profile
+    let updated_user = User::update_profile(&pool, &claims.sub, payload)
+        .await
+        .map_err(|e| {
+            tracing::error!("Database error: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ErrorResponse {
+                    error: "database_error".to_string(),
+                    message: "Failed to update profile".to_string(),
+                }),
+            )
+        })?;
+
+    tracing::info!("User profile updated successfully: {}", updated_user.email);
+
+    Ok(Json(updated_user.to_profile()))
+}

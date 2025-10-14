@@ -29,7 +29,7 @@ const steps = ['Osnovne informacije', 'Lični podaci', 'Zdravstveni podaci'];
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
-  const { register, isAuthenticated, isLoading, error, clearError } = useAuth();
+  const { register, isAuthenticated, isLoading, error, registrationSuccess, clearError } = useAuth();
   const { showError, showSuccess } = useToast();
   
   const [activeStep, setActiveStep] = useState(0);
@@ -64,6 +64,16 @@ export const RegisterPage: React.FC = () => {
       navigate('/', { replace: true });
     }
   }, [isAuthenticated, navigate]);
+
+  // Redirect to login after successful registration
+  useEffect(() => {
+    if (registrationSuccess) {
+      navigate('/login', { 
+        replace: true, 
+        state: { fromRegistration: true } 
+      });
+    }
+  }, [registrationSuccess, navigate]);
 
   // Clear errors when component mounts
   useEffect(() => {

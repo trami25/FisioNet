@@ -51,6 +51,7 @@ export interface UserProfile {
   height?: number;
   weight?: number;
   job_type?: string;   // Changed to match backend
+  profile_image?: string; // Added profile image
   role: string;
   created_at: string;  // Changed to match backend
 }

@@ -41,6 +41,13 @@ export const LoginPage: React.FC = () => {
     clearError();
   }, [clearError]);
 
+  // Show success message if coming from registration
+  useEffect(() => {
+    if ((location.state as any)?.fromRegistration) {
+      showSuccess('Registracija je uspešna! Molimo ulogujte se sa vašim podacima.');
+    }
+  }, [location, showSuccess]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({

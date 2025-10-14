@@ -138,6 +138,22 @@ export const authService = {
     }
   },
 
+  async updateProfile(updateData: Partial<UserProfile>): Promise<ApiResponse<UserProfile>> {
+    try {
+      const response = await apiClient.put('/auth/profile', updateData);
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error: any) {
+      console.error('Update profile error:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Failed to update profile',
+      };
+    }
+  },
+
   logout(): void {
     localStorage.removeItem('token');
     localStorage.removeItem('user');

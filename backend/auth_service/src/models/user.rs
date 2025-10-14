@@ -47,6 +47,7 @@ pub struct User {
     pub height: Option<f64>,
     pub weight: Option<f64>,
     pub job_type: Option<String>,
+    pub profile_image: Option<String>,
     pub role: UserRole,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -57,6 +58,18 @@ pub struct User {
 pub struct LoginRequest {
     pub email: String,
     pub password: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct UpdateUserRequest {
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
+    pub phone: Option<String>,
+    pub birth_date: Option<String>,
+    pub height: Option<f64>,
+    pub weight: Option<f64>,
+    pub job_type: Option<String>,
+    pub profile_image: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -95,6 +108,7 @@ pub struct UserProfile {
     pub height: Option<f64>,
     pub weight: Option<f64>,
     pub job_type: Option<String>,
+    pub profile_image: Option<String>,
     pub role: String,
     pub created_at: DateTime<Utc>,
 }
@@ -134,6 +148,7 @@ impl User {
             height,
             weight,
             job_type: job_type.clone(),
+            profile_image: None, // Default to None for new users
             role: role.clone(),
             created_at: now,
             updated_at: now,
@@ -141,8 +156,8 @@ impl User {
 
         sqlx::query(
             r#"
-            INSERT INTO users (id, email, password_hash, first_name, last_name, phone, birth_date, height, weight, job_type, role, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO users (id, email, password_hash, first_name, last_name, phone, birth_date, height, weight, job_type, profile_image, role, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             "#
         )
         .bind(&user.id)
@@ -155,6 +170,7 @@ impl User {
         .bind(&user.height)
         .bind(&user.weight)
         .bind(&user.job_type)
+        .bind(&user.profile_image)
         .bind(&user.role.to_string())
         .bind(&user.created_at)
         .bind(&user.updated_at)
@@ -166,7 +182,7 @@ impl User {
 
     pub async fn find_by_email(pool: &SqlitePool, email: &str) -> Result<Option<User>> {
         let user_row = sqlx::query(
-            "SELECT id, email, password_hash, first_name, last_name, phone, birth_date, height, weight, job_type, role, created_at, updated_at FROM users WHERE email = ?"
+            "SELECT id, email, password_hash, first_name, last_name, phone, birth_date, height, weight, job_type, profile_image, role, created_at, updated_at FROM users WHERE email = ?"
         )
         .bind(email)
         .fetch_optional(pool)
@@ -184,6 +200,7 @@ impl User {
                 height: row.get("height"),
                 weight: row.get("weight"),
                 job_type: row.get("job_type"),
+                profile_image: row.get("profile_image"),
                 role: row.get::<String, _>("role").parse().unwrap_or(UserRole::Patient),
                 created_at: row.get("created_at"),
                 updated_at: row.get("updated_at"),
@@ -196,7 +213,7 @@ impl User {
 
     pub async fn find_by_id(pool: &SqlitePool, user_id: &str) -> Result<Option<User>> {
         let user_row = sqlx::query(
-            "SELECT id, email, password_hash, first_name, last_name, phone, birth_date, height, weight, job_type, role, created_at, updated_at FROM users WHERE id = ?"
+            "SELECT id, email, password_hash, first_name, last_name, phone, birth_date, height, weight, job_type, profile_image, role, created_at, updated_at FROM users WHERE id = ?"
         )
         .bind(user_id)
         .fetch_optional(pool)
@@ -214,6 +231,7 @@ impl User {
                 height: row.get("height"),
                 weight: row.get("weight"),
                 job_type: row.get("job_type"),
+                profile_image: row.get("profile_image"),
                 role: row.get::<String, _>("role").parse().unwrap_or(UserRole::Patient),
                 created_at: row.get("created_at"),
                 updated_at: row.get("updated_at"),
@@ -243,8 +261,50 @@ impl User {
             height: self.height,
             weight: self.weight,
             job_type: self.job_type.clone(),
+            profile_image: self.profile_image.clone(),
             role: self.role.to_string(),
             created_at: self.created_at,
         }
+    }
+
+    pub async fn update_profile(
+        pool: &SqlitePool,
+        user_id: &str,
+        update_data: UpdateUserRequest,
+    ) -> Result<User> {
+        let now = Utc::now();
+
+        sqlx::query(
+            r#"
+            UPDATE users 
+            SET first_name = COALESCE(?, first_name),
+                last_name = COALESCE(?, last_name),
+                phone = COALESCE(?, phone),
+                birth_date = COALESCE(?, birth_date),
+                height = COALESCE(?, height),
+                weight = COALESCE(?, weight),
+                job_type = COALESCE(?, job_type),
+                profile_image = COALESCE(?, profile_image),
+                updated_at = ?
+            WHERE id = ?
+            "#
+        )
+        .bind(&update_data.first_name)
+        .bind(&update_data.last_name)
+        .bind(&update_data.phone)
+        .bind(&update_data.birth_date)
+        .bind(&update_data.height)
+        .bind(&update_data.weight)
+        .bind(&update_data.job_type)
+        .bind(&update_data.profile_image)
+        .bind(&now)
+        .bind(user_id)
+        .execute(pool)
+        .await?;
+
+        // Fetch and return updated user
+        User::find_by_id(pool, user_id)
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("User not found after update"))
     }
 }

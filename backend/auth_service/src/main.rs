@@ -1,6 +1,7 @@
 use axum::{
-    routing::{get, post},
+    routing::{get, post, put},
     Router, Extension,
+    extract::DefaultBodyLimit,
 };
 use std::net::SocketAddr;
 use tower_http::cors::CorsLayer;
@@ -41,6 +42,8 @@ async fn main() -> Result<()> {
         .route("/auth/register", post(register))
         .route("/auth/verify", get(verify_token))
         .route("/auth/profile", get(get_profile))
+        .route("/auth/profile", put(update_profile))
+        .layer(DefaultBodyLimit::max(10 * 1024 * 1024)) // 10MB limit
         .layer(Extension(pool))
         .layer(CorsLayer::permissive());
 

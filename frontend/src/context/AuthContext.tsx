@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, useCallback, useMemo, ReactNode } from 'react';
-import { User, AuthResponse } from '../types';
+import { User, AuthResponse, UserProfile } from '../types';
 import { authService } from '../services/authService';
 
 interface AuthState {
@@ -8,12 +8,14 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  registrationSuccess: boolean;
 }
 
 type AuthAction =
   | { type: 'AUTH_START' }
   | { type: 'AUTH_SUCCESS'; payload: AuthResponse }
   | { type: 'AUTH_FAILURE'; payload: string }
+  | { type: 'REGISTER_SUCCESS' }
   | { type: 'LOGOUT' }
   | { type: 'CLEAR_ERROR' }
   | { type: 'UPDATE_USER'; payload: User };
@@ -24,6 +26,7 @@ const initialState: AuthState = {
   isAuthenticated: false,
   isLoading: false,
   error: null,
+  registrationSuccess: false,
 };
 
 const authReducer = (state: AuthState, action: AuthAction): AuthState => {
@@ -33,6 +36,7 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         ...state,
         isLoading: true,
         error: null,
+        registrationSuccess: false,
       };
     case 'AUTH_SUCCESS':
       localStorage.setItem('token', action.payload.token);
@@ -43,8 +47,14 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
           email: action.payload.email,
           firstName: action.payload.first_name,
           lastName: action.payload.last_name,
+          phone: (action.payload as any).phone,
+          birthDate: (action.payload as any).birth_date,
+          height: (action.payload as any).height,
+          weight: (action.payload as any).weight,
+          jobType: (action.payload as any).job_type,
+          profileImage: (action.payload as any).profile_image,
           role: action.payload.role as any,
-          createdAt: new Date().toISOString(),
+          createdAt: (action.payload as any).created_at || new Date().toISOString(),
         },
         token: action.payload.token,
         isAuthenticated: true,
@@ -61,6 +71,13 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         isLoading: false,
         error: action.payload,
       };
+    case 'REGISTER_SUCCESS':
+      return {
+        ...state,
+        isLoading: false,
+        error: null,
+        registrationSuccess: true,
+      };
     case 'LOGOUT':
       localStorage.removeItem('token');
       return {
@@ -74,6 +91,7 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
       return {
         ...state,
         error: null,
+        registrationSuccess: false,
       };
     case 'UPDATE_USER':
       return {
@@ -91,6 +109,7 @@ interface AuthContextType extends AuthState {
   logout: () => void;
   clearError: () => void;
   updateUser: (user: User) => void;
+  updateProfile: (updateData: Partial<UserProfile>) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -125,7 +144,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             email: profileResponse.data.email,
             first_name: profileResponse.data.first_name,
             last_name: profileResponse.data.last_name,
+            phone: profileResponse.data.phone,
+            birth_date: profileResponse.data.birth_date,
+            height: profileResponse.data.height,
+            weight: profileResponse.data.weight,
+            job_type: profileResponse.data.job_type,
+            profile_image: profileResponse.data.profile_image,
             role: profileResponse.data.role,
+            created_at: profileResponse.data.created_at,
           };
           dispatch({ type: 'AUTH_SUCCESS', payload: userData });
         } else {
@@ -155,12 +181,71 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     dispatch({ type: 'UPDATE_USER', payload: user });
   }, []);
 
+  const updateProfile = useCallback(async (updateData: Partial<UserProfile>): Promise<boolean> => {
+    try {
+      dispatch({ type: 'AUTH_START' });
+      const response = await authService.updateProfile(updateData);
+      if (response.success && response.data) {
+        // Convert backend format to frontend format with updated data
+        const userData = {
+          token: state.token || '',
+          user_id: response.data.id,
+          email: response.data.email,
+          first_name: response.data.first_name,
+          last_name: response.data.last_name,
+          phone: response.data.phone,
+          birth_date: response.data.birth_date,
+          height: response.data.height,
+          weight: response.data.weight,
+          job_type: response.data.job_type,
+          profile_image: response.data.profile_image,
+          role: response.data.role,
+          created_at: response.data.created_at,
+        };
+        dispatch({ type: 'AUTH_SUCCESS', payload: userData });
+        return true;
+      } else {
+        dispatch({ type: 'AUTH_FAILURE', payload: response.error || 'Profile update failed' });
+        return false;
+      }
+    } catch (error) {
+      dispatch({ type: 'AUTH_FAILURE', payload: 'Profile update failed' });
+      return false;
+    }
+  }, [state.token]);
+
   const login = useCallback(async (email: string, password: string) => {
     try {
       dispatch({ type: 'AUTH_START' });
       const response = await authService.login(email, password);
       if (response.success && response.data) {
-        dispatch({ type: 'AUTH_SUCCESS', payload: response.data });
+        // Store token first
+        localStorage.setItem('token', response.data.token);
+        
+        // Get complete user profile after login
+        const profileResponse = await authService.getCurrentUser();
+        if (profileResponse.success && profileResponse.data) {
+          // Convert backend format to frontend format with complete data
+          const userData = {
+            token: response.data.token,
+            user_id: profileResponse.data.id,
+            email: profileResponse.data.email,
+            first_name: profileResponse.data.first_name,
+            last_name: profileResponse.data.last_name,
+            phone: profileResponse.data.phone,
+            birth_date: profileResponse.data.birth_date,
+            height: profileResponse.data.height,
+            weight: profileResponse.data.weight,
+            job_type: profileResponse.data.job_type,
+            profile_image: profileResponse.data.profile_image,
+            role: profileResponse.data.role,
+            created_at: profileResponse.data.created_at,
+          };
+          dispatch({ type: 'AUTH_SUCCESS', payload: userData });
+        } else {
+          // Fallback to basic data if profile fetch fails
+          dispatch({ type: 'AUTH_SUCCESS', payload: response.data });
+        }
       } else {
         dispatch({ type: 'AUTH_FAILURE', payload: response.error || 'Login failed' });
       }
@@ -174,7 +259,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       dispatch({ type: 'AUTH_START' });
       const response = await authService.register(userData);
       if (response.success && response.data) {
-        dispatch({ type: 'AUTH_SUCCESS', payload: response.data });
+        dispatch({ type: 'REGISTER_SUCCESS' });
       } else {
         dispatch({ type: 'AUTH_FAILURE', payload: response.error || 'Registration failed' });
       }
@@ -198,7 +283,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     clearError,
     updateUser,
-  }), [state, login, register, logout, clearError, updateUser]);
+    updateProfile,
+  }), [state, login, register, logout, clearError, updateUser, updateProfile]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

@@ -59,7 +59,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export const ProfilePage: React.FC = () => {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, updateProfile } = useAuth();
   const [activeTab, setActiveTab] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<User>>(user || {});
@@ -118,11 +118,26 @@ export const ProfilePage: React.FC = () => {
 
   const handleSave = async () => {
     try {
-      // TODO: Call API to update user profile
-      updateUser({ ...user, ...editData } as User);
-      setIsEditing(false);
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
+      // Convert frontend field names to backend field names
+      const updateData = {
+        first_name: editData.firstName,
+        last_name: editData.lastName,
+        phone: editData.phone,
+        birth_date: editData.birthDate,
+        height: editData.height,
+        weight: editData.weight,
+        job_type: editData.jobType,
+        profile_image: editData.profileImage,
+      };
+
+      const success = await updateProfile(updateData);
+      if (success) {
+        setIsEditing(false);
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3000);
+      } else {
+        console.error('Failed to update profile');
+      }
     } catch (error) {
       console.error('Failed to update profile:', error);
     }
@@ -158,20 +173,68 @@ export const ProfilePage: React.FC = () => {
     if (!selectedFile) return;
 
     try {
-      // TODO: Upload to server
-      // For now, just use the preview URL as the profile image
-      const updatedUser = { ...user, profileImage: previewUrl };
-      updateUser(updatedUser);
+      // Compress image before uploading
+      const compressedBase64 = await compressImage(selectedFile, 0.7, 400); // 70% quality, max 400px
       
-      setAvatarDialogOpen(false);
-      setSelectedFile(null);
-      setPreviewUrl('');
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
+      // Update profile with compressed base64 image
+      const success = await updateProfile({ 
+        profile_image: compressedBase64 
+      });
+      
+      if (success) {
+        // Update user context with new profile image
+        if (user) {
+          const updatedUser = { ...user, profileImage: compressedBase64 };
+          updateUser(updatedUser);
+        }
+        
+        setAvatarDialogOpen(false);
+        setSelectedFile(null);
+        setPreviewUrl('');
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3000);
+      } else {
+        alert('Neuspešno čuvanje slike');
+      }
     } catch (error) {
       console.error('Failed to upload avatar:', error);
       alert('Neuspešno otpremanje slike. Pokušajte ponovo.');
     }
+  };
+
+  // Image compression function
+  const compressImage = (file: File, quality: number, maxSize: number): Promise<string> => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d')!;
+      const img = new Image();
+      
+      img.onload = () => {
+        // Calculate new dimensions
+        let { width, height } = img;
+        if (width > height) {
+          if (width > maxSize) {
+            height = (height * maxSize) / width;
+            width = maxSize;
+          }
+        } else {
+          if (height > maxSize) {
+            width = (width * maxSize) / height;
+            height = maxSize;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressedBase64);
+      };
+      
+      img.src = URL.createObjectURL(file);
+    });
   };
 
   const handleSettingChange = (category: string, setting: string, value: boolean | string) => {
