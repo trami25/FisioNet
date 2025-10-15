@@ -52,13 +52,13 @@ export const ExerciseDetailPage: React.FC = () => {
 
   // Mock exercise data for demo
   const mockExercise: Exercise = {
-    id: id || '1',
+    id: parseInt(id || '1'),
     title: 'Push-ups',
     description: 'Klasična vežba za jačanje gornjeg dela tela koja angažuje grudi, ramena i triceps. Ova vežba je odlična za početnike jer se može prilagoditi različitim nivoima fitnesa.',
     category: 'Strength',
-    difficultyLevel: 'Beginner',
-    durationMinutes: 10,
-    equipmentNeeded: [],
+    difficulty_level: 'Beginner',
+    duration_minutes: 10,
+    equipment_needed: [],
     instructions: [
       'Počnite u poziciji planke sa rukama postavljenim nešto šire od ramena',
       'Držite telo u ravnoj liniji od glave do pete',
@@ -69,10 +69,11 @@ export const ExerciseDetailPage: React.FC = () => {
       'Ponovite pokret u kontrolisanom tempu',
       'Napravite pauzu između serija ako je potrebno'
     ],
-    imageUrl: 'https://via.placeholder.com/600x300?text=Push-ups+Exercise',
-    youtubeUrl: 'https://youtube.com/watch?v=example',
-    targetMuscles: ['Chest', 'Arms', 'Shoulders', 'Core'],
-    createdAt: '2024-01-01T00:00:00Z',
+    image_url: 'https://via.placeholder.com/600x300?text=Push-ups+Exercise',
+    youtube_url: 'https://youtube.com/watch?v=example',
+    target_muscles: ['Chest', 'Arms', 'Shoulders', 'Core'],
+    created_at: Date.now() / 1000,
+    is_specialized: false,
   };
 
   useEffect(() => {
@@ -90,21 +91,14 @@ export const ExerciseDetailPage: React.FC = () => {
     setError(null);
     
     try {
-      // For demo, use mock data
-      setTimeout(() => {
-        setExercise(mockExercise);
-        setLoading(false);
-      }, 800);
-
-      // Uncomment when backend is ready:
-      // const response = await exerciseService.getExerciseById(id);
-      // if (response.success && response.data) {
-      //   setExercise(response.data);
-      // } else {
-      //   setError(response.error || 'Exercise not found');
-      // }
-    } catch (err) {
-      setError('Failed to load exercise');
+      const data = await exerciseService.getExerciseById(parseInt(id));
+      setExercise(data);
+    } catch (err: any) {
+      console.error('Failed to load exercise:', err);
+      setError(err.response?.data?.error || 'Failed to load exercise');
+      // Fallback to mock data
+      setExercise(mockExercise);
+    } finally {
       setLoading(false);
     }
   };
@@ -212,7 +206,7 @@ export const ExerciseDetailPage: React.FC = () => {
         {/* Exercise Image */}
         <Paper elevation={2} sx={{ overflow: 'hidden' }}>
           <img
-            src={exercise.imageUrl || `https://via.placeholder.com/800x400?text=${encodeURIComponent(exercise.title)}`}
+            src={exercise.image_url || `https://via.placeholder.com/800x400?text=${encodeURIComponent(exercise.title)}`}
             alt={exercise.title}
             style={{ width: '100%', height: '400px', objectFit: 'cover' }}
           />
@@ -235,15 +229,15 @@ export const ExerciseDetailPage: React.FC = () => {
               {/* Tags */}
               <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap' }}>
                 <Chip
-                  label={exercise.difficultyLevel === 'Beginner' ? 'Početnik' : 
-                        exercise.difficultyLevel === 'Intermediate' ? 'Napredni' : 'Ekspert'}
-                  color={getDifficultyColor(exercise.difficultyLevel) as any}
+                  label={exercise.difficulty_level === 'Beginner' ? 'Početnik' : 
+                        exercise.difficulty_level === 'Intermediate' ? 'Napredni' : 'Ekspert'}
+                  color={getDifficultyColor(exercise.difficulty_level) as any}
                 />
                 <Chip label={exercise.category} variant="outlined" />
-                {exercise.durationMinutes && (
+                {exercise.duration_minutes && (
                   <Chip
                     icon={<AccessTime />}
-                    label={`${exercise.durationMinutes} min`}
+                    label={`${exercise.duration_minutes} min`}
                     variant="outlined"
                   />
                 )}
@@ -259,7 +253,7 @@ export const ExerciseDetailPage: React.FC = () => {
                     Ciljna grupa mišića
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    {exercise.targetMuscles.map((muscle, index) => (
+                    {exercise.target_muscles.map((muscle, index) => (
                       <Chip key={index} label={muscle} size="small" variant="outlined" />
                     ))}
                   </Box>
@@ -272,9 +266,9 @@ export const ExerciseDetailPage: React.FC = () => {
                   <Typography variant="h6" gutterBottom>
                     Potrebna oprema
                   </Typography>
-                  {exercise.equipmentNeeded.length > 0 ? (
+                  {exercise.equipment_needed.length > 0 ? (
                     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                      {exercise.equipmentNeeded.map((equipment, index) => (
+                      {exercise.equipment_needed.map((equipment, index) => (
                         <Chip key={index} label={equipment} size="small" />
                       ))}
                     </Box>
@@ -340,11 +334,11 @@ export const ExerciseDetailPage: React.FC = () => {
                   </Button>
                 </Box>
 
-                {exercise.youtubeUrl && (
+                {exercise.youtube_url && (
                   <Button
                     variant="outlined"
                     startIcon={<YouTube />}
-                    onClick={() => window.open(exercise.youtubeUrl, '_blank')}
+                    onClick={() => window.open(exercise.youtube_url, '_blank')}
                     fullWidth
                     color="error"
                   >
@@ -364,8 +358,8 @@ export const ExerciseDetailPage: React.FC = () => {
                     Nivo:
                   </Typography>
                   <Typography variant="body2">
-                    {exercise.difficultyLevel === 'Beginner' ? 'Početnik' : 
-                     exercise.difficultyLevel === 'Intermediate' ? 'Napredni' : 'Ekspert'}
+                    {exercise.difficulty_level === 'Beginner' ? 'Početnik' : 
+                     exercise.difficulty_level === 'Intermediate' ? 'Napredni' : 'Ekspert'}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -373,7 +367,7 @@ export const ExerciseDetailPage: React.FC = () => {
                     Trajanje:
                   </Typography>
                   <Typography variant="body2">
-                    {exercise.durationMinutes} min
+                    {exercise.duration_minutes} min
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>

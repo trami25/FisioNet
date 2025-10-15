@@ -38,7 +38,7 @@ export const ExercisesPage: React.FC = () => {
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [favorites, setFavorites] = useState<Set<number>>(new Set());
 
   const [filters, setFilters] = useState<ExerciseFilter>({
     search: '',
@@ -50,79 +50,83 @@ export const ExercisesPage: React.FC = () => {
   // Mock data for demo purposes
   const mockExercises: Exercise[] = [
     {
-      id: '1',
+      id: 1,
       title: 'Push-ups',
       description: 'Klasična vežba za jačanje gornjeg dela tela koja angažuje grudi, ramena i triceps.',
       category: 'Strength',
-      difficultyLevel: 'Beginner',
-      durationMinutes: 10,
-      equipmentNeeded: [],
+      difficulty_level: 'Beginner',
+      duration_minutes: 10,
+      equipment_needed: [],
       instructions: [
         'Postavite se u poziciju za sklekove',
         'Spustite telo do poda',
         'Gurnite se nazad u početnu poziciju',
         'Ponovite pokret'
       ],
-      imageUrl: 'https://via.placeholder.com/300x200?text=Push-ups',
-      youtubeUrl: 'https://youtube.com/watch?v=example',
-      targetMuscles: ['Chest', 'Arms', 'Shoulders'],
-      createdAt: '2024-01-01T00:00:00Z',
+      image_url: 'https://via.placeholder.com/300x200?text=Push-ups',
+      youtube_url: 'https://youtube.com/watch?v=example',
+      target_muscles: ['Chest', 'Arms', 'Shoulders'],
+      created_at: Date.now() / 1000,
+      is_specialized: false,
     },
     {
-      id: '2',
+      id: 2,
       title: 'Squats',
       description: 'Odlična vežba za jačanje nogu i gluteusa, poboljšava funkcionalnu snagu.',
       category: 'Strength',
-      difficultyLevel: 'Beginner',
-      durationMinutes: 15,
-      equipmentNeeded: [],
+      difficulty_level: 'Beginner',
+      duration_minutes: 15,
+      equipment_needed: [],
       instructions: [
         'Stanite sa nogama na širini ramena',
         'Spustite se u čučanj',
         'Držite leđa ravno',
         'Vratite se u početnu poziciju'
       ],
-      imageUrl: 'https://via.placeholder.com/300x200?text=Squats',
-      youtubeUrl: 'https://youtube.com/watch?v=example2',
-      targetMuscles: ['Legs', 'Glutes'],
-      createdAt: '2024-01-02T00:00:00Z',
+      image_url: 'https://via.placeholder.com/300x200?text=Squats',
+      youtube_url: 'https://youtube.com/watch?v=example2',
+      target_muscles: ['Legs', 'Glutes'],
+      created_at: Date.now() / 1000,
+      is_specialized: false,
     },
     {
-      id: '3',
+      id: 3,
       title: 'Yoga Flow',
       description: 'Nežan tok joga pokreta za poboljšanje fleksibilnosti i smanjenje stresa.',
       category: 'Flexibility',
-      difficultyLevel: 'Intermediate',
-      durationMinutes: 20,
-      equipmentNeeded: ['Yoga Mat'],
+      difficulty_level: 'Intermediate',
+      duration_minutes: 20,
+      equipment_needed: ['Yoga Mat'],
       instructions: [
         'Počnite u Mountain Pose',
         'Pređite u Downward Dog',
         'Izvršite Sun Salutation',
         'Završite u Child\'s Pose'
       ],
-      imageUrl: 'https://via.placeholder.com/300x200?text=Yoga+Flow',
-      youtubeUrl: 'https://youtube.com/watch?v=example3',
-      targetMuscles: ['Full Body'],
-      createdAt: '2024-01-03T00:00:00Z',
+      image_url: 'https://via.placeholder.com/300x200?text=Yoga+Flow',
+      youtube_url: 'https://youtube.com/watch?v=example3',
+      target_muscles: ['Full Body'],
+      created_at: Date.now() / 1000,
+      is_specialized: false,
     },
     {
-      id: '4',
+      id: 4,
       title: 'Balance Board Training',
       description: 'Vežbe za poboljšanje ravnoteže i stabilnosti kora.',
       category: 'Balance',
-      difficultyLevel: 'Advanced',
-      durationMinutes: 12,
-      equipmentNeeded: ['Balance Board'],
+      difficulty_level: 'Advanced',
+      duration_minutes: 12,
+      equipment_needed: ['Balance Board'],
       instructions: [
         'Stanite na balance board',
         'Održite ravnotežu 30 sekundi',
         'Dodajte pokrete ruku',
         'Povećajte složenost'
       ],
-      imageUrl: 'https://via.placeholder.com/300x200?text=Balance+Training',
-      targetMuscles: ['Core', 'Legs'],
-      createdAt: '2024-01-04T00:00:00Z',
+      image_url: 'https://via.placeholder.com/300x200?text=Balance+Training',
+      target_muscles: ['Core', 'Legs'],
+      created_at: Date.now() / 1000,
+      is_specialized: false,
     },
   ];
 
@@ -137,35 +141,22 @@ export const ExercisesPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      // For demo, use mock data
-      setTimeout(() => {
-        setExercises(mockExercises);
-        setLoading(false);
-      }, 1000);
-      
-      // Uncomment when backend is ready:
-      // const response = await exerciseService.getAllExercises(filters);
-      // if (response.success && response.data) {
-      //   setExercises(response.data);
-      // } else {
-      //   setError(response.error || 'Failed to load exercises');
-      // }
-    } catch (err) {
-      setError('Failed to load exercises');
+      const data = await exerciseService.getAllExercises(filters);
+      setExercises(data);
+    } catch (err: any) {
+      console.error('Failed to load exercises:', err);
+      setError(err.response?.data?.error || 'Failed to load exercises');
+      // Fallback to mock data in case of error
+      setExercises(mockExercises);
+    } finally {
       setLoading(false);
     }
   };
 
   const loadCategories = async () => {
     try {
-      // For demo, use mock data
+      // Use mock categories for now
       setCategories(mockCategories);
-      
-      // Uncomment when backend is ready:
-      // const response = await exerciseService.getCategories();
-      // if (response.success && response.data) {
-      //   setCategories(response.data);
-      // }
     } catch (err) {
       console.error('Failed to load categories');
     }
@@ -178,7 +169,7 @@ export const ExercisesPage: React.FC = () => {
     }));
   };
 
-  const toggleFavorite = (exerciseId: string) => {
+  const toggleFavorite = (exerciseId: number) => {
     setFavorites(prev => {
       const newFavorites = new Set(prev);
       if (newFavorites.has(exerciseId)) {
@@ -205,9 +196,9 @@ export const ExercisesPage: React.FC = () => {
       exercise.description.toLowerCase().includes(filters.search.toLowerCase());
     
     const matchesCategory = !filters.category || exercise.category === filters.category;
-    const matchesDifficulty = !filters.difficultyLevel || exercise.difficultyLevel === filters.difficultyLevel;
+    const matchesDifficulty = !filters.difficultyLevel || exercise.difficulty_level === filters.difficultyLevel;
     const matchesTargetMuscle = !filters.targetMuscle || 
-      exercise.targetMuscles.some(muscle => muscle.toLowerCase().includes(filters.targetMuscle!.toLowerCase()));
+      exercise.target_muscles.some((muscle: string) => muscle.toLowerCase().includes(filters.targetMuscle!.toLowerCase()));
 
     return matchesSearch && matchesCategory && matchesDifficulty && matchesTargetMuscle;
   });
@@ -329,7 +320,7 @@ export const ExercisesPage: React.FC = () => {
               <CardMedia
                 component="img"
                 sx={{ width: 300, objectFit: 'cover' }}
-                image={exercise.imageUrl || `https://via.placeholder.com/300x250?text=${encodeURIComponent(exercise.title)}`}
+                image={exercise.image_url || `https://via.placeholder.com/300x250?text=${encodeURIComponent(exercise.title)}`}
                 alt={exercise.title}
               />
 
@@ -355,9 +346,9 @@ export const ExercisesPage: React.FC = () => {
                   {/* Tags */}
                   <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
                     <Chip
-                      label={exercise.difficultyLevel === 'Beginner' ? 'Početnik' : 
-                            exercise.difficultyLevel === 'Intermediate' ? 'Napredni' : 'Ekspert'}
-                      color={getDifficultyColor(exercise.difficultyLevel) as any}
+                      label={exercise.difficulty_level === 'Beginner' ? 'Početnik' : 
+                            exercise.difficulty_level === 'Intermediate' ? 'Napredni' : 'Ekspert'}
+                      color={getDifficultyColor(exercise.difficulty_level) as any}
                       size="small"
                     />
                     <Chip
@@ -365,10 +356,10 @@ export const ExercisesPage: React.FC = () => {
                       variant="outlined"
                       size="small"
                     />
-                    {exercise.durationMinutes && (
+                    {exercise.duration_minutes && (
                       <Chip
                         icon={<AccessTime />}
-                        label={`${exercise.durationMinutes} min`}
+                        label={`${exercise.duration_minutes} min`}
                         variant="outlined"
                         size="small"
                       />
@@ -377,7 +368,7 @@ export const ExercisesPage: React.FC = () => {
 
                   {/* Target Muscles */}
                   <Typography variant="caption" color="text.secondary">
-                    Ciljna grupa: {exercise.targetMuscles.join(', ')}
+                    Ciljna grupa: {exercise.target_muscles.join(', ')}
                   </Typography>
                 </CardContent>
 
@@ -390,11 +381,11 @@ export const ExercisesPage: React.FC = () => {
                   >
                     Pogledaj vežbu
                   </Button>
-                  {exercise.youtubeUrl && (
+                  {exercise.youtube_url && (
                     <Button
                       variant="outlined"
                       size="small"
-                      onClick={() => window.open(exercise.youtubeUrl, '_blank')}
+                      onClick={() => window.open(exercise.youtube_url, '_blank')}
                       sx={{ textTransform: 'none' }}
                     >
                       Video

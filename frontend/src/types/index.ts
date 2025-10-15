@@ -96,20 +96,49 @@ export interface UserProfile {
 
 // Exercise types
 export interface Exercise {
-  id: string;
+  id: number;
   title: string;
   description: string;
   category: string;
-  difficultyLevel: 'Beginner' | 'Intermediate' | 'Advanced';
-  durationMinutes?: number;
-  equipmentNeeded: string[];
+  difficulty_level: string;
+  duration_minutes?: number;
+  equipment_needed: string[];
   instructions: string[];
-  imageUrl?: string;
-  videoUrl?: string;
-  youtubeUrl?: string;
-  targetMuscles: string[];
-  createdAt: string;
-  isSpecialized?: boolean; // For exercises assigned by physiotherapists
+  image_url?: string;
+  video_url?: string;
+  youtube_url?: string;
+  target_muscles: string[];
+  created_at: number;
+  is_specialized: boolean;
+}
+
+export interface CreateExerciseRequest {
+  title: string;
+  description: string;
+  category: string;
+  difficulty_level: string;
+  duration_minutes?: number;
+  equipment_needed: string[];
+  instructions: string[];
+  image_url?: string;
+  video_url?: string;
+  youtube_url?: string;
+  target_muscles: string[];
+  is_specialized?: boolean;
+}
+
+export interface UpdateExerciseRequest {
+  title?: string;
+  description?: string;
+  category?: string;
+  difficulty_level?: string;
+  duration_minutes?: number;
+  equipment_needed?: string[];
+  instructions?: string[];
+  image_url?: string;
+  video_url?: string;
+  youtube_url?: string;
+  target_muscles?: string[];
 }
 
 export interface ExerciseFilter {

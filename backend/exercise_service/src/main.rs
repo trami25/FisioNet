@@ -6,6 +6,9 @@ use std::net::SocketAddr;
 use tower_http::cors::CorsLayer;
 use tracing_subscriber;
 use anyhow::Result;
+use std::fs;
+use std::path::Path;
+use std::env;
 
 mod models;
 mod handlers;
@@ -77,6 +80,23 @@ async fn main() -> Result<()> {
     } else {
         tracing::info!("Exercises table already exists");
     }
+
+    // Run migrations
+    let current_dir = env::current_dir()?;
+    let migrations_dir = current_dir.join("migrations");
+    let migration_files = fs::read_dir(&migrations_dir)?
+        .filter_map(Result::ok)
+        .filter(|entry| entry.path().extension().map_or(false, |ext| ext == "sql"))
+        .collect::<Vec<_>>();
+
+    for migration in migration_files {
+        let migration_path = migration.path();
+        let migration_sql = fs::read_to_string(&migration_path)?;
+        tracing::info!("Running migration: {:?}", migration_path);
+        sqlx::query(&migration_sql).execute(&pool).await?;
+    }
+
+    tracing::info!("Migrations completed successfully");
 
     // Build application routes
     let app = Router::new()
