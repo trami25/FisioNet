@@ -22,6 +22,7 @@ import {
   Email,
   CalendarToday,
   Person,
+  Chat,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { User } from '../types';
@@ -276,6 +277,15 @@ export const PhysiotherapistsPage: React.FC = () => {
                         onClick={() => handleViewProfile(physiotherapist)}
                       >
                         Profil
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<Chat />}
+                        onClick={() => navigate(`/chat?userId=${physiotherapist.id}`)}
+                        sx={{ mr: 1 }}
+                      >
+                        Pošalji poruku
                       </Button>
                       <Button
                         variant="contained"

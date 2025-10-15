@@ -25,6 +25,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useUnreadMessages } from '../../context/UnreadMessagesContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -33,6 +34,7 @@ interface LayoutProps {
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuth();
+  const { unreadCount } = useUnreadMessages();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -166,7 +168,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 {/* Messages */}
                 <Tooltip title="Poruke">
                   <IconButton color="inherit" component={Link} to="/chat">
-                    <Badge badgeContent={2} color="error">
+                    <Badge badgeContent={unreadCount} color="error">
                       <Message />
                     </Badge>
                   </IconButton>

@@ -4,6 +4,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
+import { UnreadMessagesProvider } from './context/UnreadMessagesContext';
 import { Layout } from './components/Layout/Layout';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
@@ -66,7 +67,8 @@ function App() {
       <AuthProvider>
         <ToastProvider>
           <Router>
-          <Layout>
+            <UnreadMessagesProvider>
+              <Layout>
             <Routes>
               {/* Public routes */}
               <Route path="/" element={<HomePage />} />
@@ -132,8 +134,9 @@ function App() {
               {/* Catch all route */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-          </Layout>
-        </Router>
+              </Layout>
+            </UnreadMessagesProvider>
+          </Router>
         </ToastProvider>
       </AuthProvider>
     </ThemeProvider>
