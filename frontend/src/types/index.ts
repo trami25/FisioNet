@@ -158,32 +158,41 @@ export interface Physiotherapist {
 // Forum types
 export interface ForumPost {
   id: string;
+  author_id: string;
+  author_name: string;
   title: string;
   content: string;
-  authorId: string;
-  authorName: string;
-  category: string;
-  tags: string[];
-  likes: number;
-  dislikes: number;
-  commentCount: number;
-  isLocked: boolean;
-  isPinned: boolean;
-  createdAt: string;
-  updatedAt: string;
+  created_at: number;
+  updated_at: number;
+  comments_count: number;
 }
 
 export interface ForumComment {
   id: string;
-  postId: string;
-  authorId: string;
-  authorName: string;
+  post_id: string;
+  author_id: string;
+  author_name: string;
   content: string;
-  likes: number;
-  dislikes: number;
-  parentCommentId?: string; // For nested comments
-  createdAt: string;
-  updatedAt: string;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface CreatePostRequest {
+  title: string;
+  content: string;
+}
+
+export interface UpdatePostRequest {
+  title?: string;
+  content?: string;
+}
+
+export interface CreateCommentRequest {
+  content: string;
+}
+
+export interface UpdateCommentRequest {
+  content: string;
 }
 
 // Chat types

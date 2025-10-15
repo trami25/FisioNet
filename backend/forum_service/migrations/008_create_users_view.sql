@@ -1,0 +1,2 @@
+-- No need to create users view since we're using the auth service database directly
+-- The users table already exists in this database
