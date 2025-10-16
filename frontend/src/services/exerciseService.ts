@@ -25,6 +25,36 @@ exerciseClient.interceptors.request.use(
   }
 );
 
+// Also attach x-user-id automatically from localStorage when present
+exerciseClient.interceptors.request.use((config) => {
+  const getUserId = () => {
+    const uid = localStorage.getItem('user_id');
+    if (uid) return uid;
+    const user = localStorage.getItem('user');
+    if (user) {
+      try { const u = JSON.parse(user); return u.id?.toString(); } catch { return null; }
+    }
+    return null;
+  };
+  const userId = getUserId();
+  if (userId) {
+    config.headers = config.headers || {};
+    (config.headers as any)['x-user-id'] = userId;
+  }
+  // DEBUG: print outgoing request and headers so we can verify x-user-id in browser console
+  try {
+    // avoid noisy logs for frequent GETs in prod; only log for mutating requests
+    const method = (config.method || '').toLowerCase();
+    if (method === 'post' || method === 'put' || method === 'delete') {
+      // eslint-disable-next-line no-console
+      console.debug('[exerciseClient] outgoing', method, config.url, 'headers=', config.headers);
+    }
+  } catch (e) {
+    // ignore logging errors
+  }
+  return config;
+}, (error) => Promise.reject(error));
+
 export const exerciseService = {
   async getAllExercises(filters?: ExerciseFilter): Promise<Exercise[]> {
     const params = new URLSearchParams();
@@ -58,16 +88,75 @@ export const exerciseService = {
   },
 
   async createExercise(exerciseData: CreateExerciseRequest): Promise<Exercise> {
-    const response = await exerciseClient.post<Exercise>('/exercises', exerciseData);
+    const getUserId = () => {
+      const uid = localStorage.getItem('user_id');
+      if (uid) return uid;
+      const user = localStorage.getItem('user');
+      if (user) {
+        try { const u = JSON.parse(user); return u.id?.toString(); } catch { return null; }
+      }
+      return null;
+    };
+    const userId = getUserId();
+    const headers: any = {};
+    if (userId) headers['x-user-id'] = userId;
+    const response = await exerciseClient.post<Exercise>('/exercises', exerciseData, { headers });
     return response.data;
   },
 
   async updateExercise(id: number, exerciseData: UpdateExerciseRequest): Promise<Exercise> {
-    const response = await exerciseClient.put<Exercise>(`/exercises/${id}`, exerciseData);
+    const getUserId = () => {
+      const uid = localStorage.getItem('user_id');
+      if (uid) return uid;
+      const user = localStorage.getItem('user');
+      if (user) {
+        try { const u = JSON.parse(user); return u.id?.toString(); } catch { return null; }
+      }
+      return null;
+    };
+    const userId = getUserId();
+    const headers: any = {};
+    if (userId) headers['x-user-id'] = userId;
+    const response = await exerciseClient.put<Exercise>(`/exercises/${id}`, exerciseData, { headers });
     return response.data;
   },
 
   async deleteExercise(id: number): Promise<void> {
-    await exerciseClient.delete(`/exercises/${id}`);
+    const getUserId = () => {
+      const uid = localStorage.getItem('user_id');
+      if (uid) return uid;
+      const user = localStorage.getItem('user');
+      if (user) {
+        try { const u = JSON.parse(user); return u.id?.toString(); } catch { return null; }
+      }
+      return null;
+    };
+    const userId = getUserId();
+    const headers: any = {};
+    if (userId) headers['x-user-id'] = userId;
+    await exerciseClient.delete(`/exercises/${id}`, { headers });
+  },
+
+  async uploadExerciseImages(exerciseId: number, files: File[]): Promise<string[]> {
+    const getUserId = () => {
+      const uid = localStorage.getItem('user_id');
+      if (uid) return uid;
+      const user = localStorage.getItem('user');
+      if (user) {
+        try { const u = JSON.parse(user); return u.id?.toString(); } catch { return null; }
+      }
+      return null;
+    };
+    const userId = getUserId();
+    const headers: any = {};
+    if (userId) headers['x-user-id'] = userId;
+
+    const form = new FormData();
+    files.forEach((f) => form.append('file', f));
+
+    // Let the browser/axios set the multipart Content-Type (boundary)
+    const response = await exerciseClient.post<string[]>(`/exercises/${exerciseId}/images`, form);
+
+    return response.data;
   },
 };

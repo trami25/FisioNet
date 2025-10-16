@@ -4,10 +4,10 @@ use axum::{
 };
 use std::net::SocketAddr;
 use tower_http::cors::CorsLayer;
+use tower_http::services::ServeDir;
 use tracing_subscriber;
 use anyhow::Result;
 use std::fs;
-use std::path::Path;
 use std::env;
 
 mod models;
@@ -99,6 +99,13 @@ async fn main() -> Result<()> {
     tracing::info!("Migrations completed successfully");
 
     // Build application routes
+    // ensure static images directory exists
+    let static_dir = current_dir.join("static").join("images");
+    if !static_dir.exists() {
+        fs::create_dir_all(&static_dir)?;
+        tracing::info!("Created static images directory: {:?}", static_dir);
+    }
+
     let app = Router::new()
         .route("/health", get(health_check))
         .route("/exercises", get(get_exercises))
@@ -106,6 +113,14 @@ async fn main() -> Result<()> {
         .route("/exercises/:exercise_id", get(get_exercise))
         .route("/exercises/:exercise_id", put(update_exercise))
         .route("/exercises/:exercise_id", delete(delete_exercise))
+        // upload and manage images
+        .route("/exercises/:exercise_id/images", post(upload_exercise_images))
+        .route("/exercises/:exercise_id/images/:image_id", delete(delete_exercise_image))
+        // serve static images from ./static
+        .nest_service(
+            "/static",
+            ServeDir::new(current_dir.join("static"))
+        )
         .layer(Extension(pool))
         .layer(CorsLayer::permissive());
 

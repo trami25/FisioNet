@@ -36,6 +36,7 @@ import {
 import { useParams, useNavigate } from 'react-router-dom';
 import { Exercise } from '../types';
 import { exerciseService } from '../services/exerciseService';
+import ImageCarousel from '../components/ImageCarousel';
 import { useAuth } from '../context/AuthContext';
 
 export const ExerciseDetailPage: React.FC = () => {
@@ -205,11 +206,15 @@ export const ExerciseDetailPage: React.FC = () => {
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {/* Exercise Image */}
         <Paper elevation={2} sx={{ overflow: 'hidden' }}>
-          <img
-            src={exercise.image_url || `https://via.placeholder.com/800x400?text=${encodeURIComponent(exercise.title)}`}
-            alt={exercise.title}
-            style={{ width: '100%', height: '400px', objectFit: 'cover' }}
-          />
+          {exercise.images && exercise.images.length > 0 ? (
+            <ImageCarousel images={exercise.images} alt={exercise.title} height={400} />
+          ) : (
+            <img
+              src={exercise.image_url || `https://via.placeholder.com/800x400?text=${encodeURIComponent(exercise.title)}`}
+              alt={exercise.title}
+              style={{ width: '100%', height: '400px', objectFit: 'cover' }}
+            />
+          )}
         </Paper>
 
         {/* Main Content */}
