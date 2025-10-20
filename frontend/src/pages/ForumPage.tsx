@@ -26,6 +26,7 @@ import {
   Edit as EditIcon,
 } from '@mui/icons-material';
 import { forumService } from '../services/forumService';
+import { usersService } from '../services/usersService';
 import { ForumPost, ForumComment, CreatePostRequest } from '../types';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
@@ -54,7 +55,28 @@ export const ForumPage: React.FC = () => {
     try {
       setLoading(true);
       const data = await forumService.getPosts();
-      setPosts(data);
+
+      // Enrich posts with author's profile image (frontend-side fast fix)
+      const authorIds = Array.from(new Set(data.map((p: any) => p.author_id)));
+      const users = await Promise.all(
+        authorIds.map((id) => usersService.getUserById(id).catch(() => null))
+      );
+      const userMap: Record<string, any> = {};
+      authorIds.forEach((id, idx) => {
+        if (users[idx]) userMap[id] = users[idx];
+      });
+
+      // Attach full author object to each post
+      const enriched = data.map((p: any) => ({
+        ...p,
+        author: userMap[p.author_id] || {
+          firstName: p.author_name.split(' ')[0] || '',
+          lastName: p.author_name.split(' ').slice(1).join(' ') || '',
+          profileImage: undefined,
+        },
+      }));
+
+      setPosts(enriched);
     } catch (error: any) {
       showToast(error.response?.data?.error || 'Greška pri učitavanju postova', 'error');
     } finally {
@@ -66,7 +88,27 @@ export const ForumPage: React.FC = () => {
     try {
       setCommentsLoading(true);
       const data = await forumService.getPostComments(postId);
-      setComments(data);
+
+      // Enrich comments with author profile images
+      const authorIds = Array.from(new Set(data.map((c: any) => c.author_id)));
+      const users = await Promise.all(
+        authorIds.map((id) => usersService.getUserById(id).catch(() => null))
+      );
+      const userMap: Record<string, any> = {};
+      authorIds.forEach((id, idx) => {
+        if (users[idx]) userMap[id] = users[idx];
+      });
+
+      const enriched = data.map((c: any) => ({
+        ...c,
+        author: userMap[c.author_id] || {
+          firstName: c.author_name.split(' ')[0] || '',
+          lastName: c.author_name.split(' ').slice(1).join(' ') || '',
+          profileImage: undefined,
+        },
+      }));
+
+      setComments(enriched);
     } catch (error: any) {
       showToast(error.response?.data?.error || 'Greška pri učitavanju komentara', 'error');
     } finally {
@@ -199,9 +241,11 @@ export const ForumPage: React.FC = () => {
             <Card key={post.id} sx={{ cursor: 'pointer' }} onClick={() => handleOpenPost(post)}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Avatar sx={{ mr: 2 }}>{post.author_name[0]}</Avatar>
+                  <Avatar src={(post as any).author?.profileImage} sx={{ mr: 2 }}>
+                    {!((post as any).author?.profileImage) && ((post as any).author?.firstName?.[0] || post.author_name?.[0])}
+                  </Avatar>
                   <Box>
-                    <Typography variant="subtitle2">{post.author_name}</Typography>
+                    <Typography variant="subtitle2">{(post as any).author?.firstName || post.author_name.split(' ')[0]} {(post as any).author?.lastName || post.author_name.split(' ').slice(1).join(' ')}</Typography>
                     <Typography variant="caption" color="text.secondary">
                       {formatDate(post.created_at)}
                     </Typography>
@@ -289,9 +333,11 @@ export const ForumPage: React.FC = () => {
             <DialogContent dividers>
               <Box sx={{ mb: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Avatar sx={{ mr: 2 }}>{selectedPost.author_name[0]}</Avatar>
+                  <Avatar src={(selectedPost as any).author?.profileImage} sx={{ mr: 2 }}>
+                    {!((selectedPost as any).author?.profileImage) && ((selectedPost as any).author?.firstName?.[0] || selectedPost.author_name?.[0])}
+                  </Avatar>
                   <Box>
-                    <Typography variant="subtitle1">{selectedPost.author_name}</Typography>
+                    <Typography variant="subtitle1">{(selectedPost as any).author?.firstName || selectedPost.author_name.split(' ')[0]} {(selectedPost as any).author?.lastName || selectedPost.author_name.split(' ').slice(1).join(' ')}</Typography>
                     <Typography variant="caption" color="text.secondary">
                       {formatDate(selectedPost.created_at)}
                     </Typography>
@@ -318,11 +364,11 @@ export const ForumPage: React.FC = () => {
                     <Paper key={comment.id} sx={{ p: 2 }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Avatar sx={{ width: 32, height: 32, mr: 1 }}>
-                            {comment.author_name[0]}
+                          <Avatar src={(comment as any).author?.profileImage} sx={{ width: 32, height: 32, mr: 1 }}>
+                            {!((comment as any).author?.profileImage) && ((comment as any).author?.firstName?.[0] || comment.author_name?.[0])}
                           </Avatar>
                           <Box>
-                            <Typography variant="subtitle2">{comment.author_name}</Typography>
+                            <Typography variant="subtitle2">{(comment as any).author?.firstName || comment.author_name.split(' ')[0]} {(comment as any).author?.lastName || comment.author_name.split(' ').slice(1).join(' ')}</Typography>
                             <Typography variant="caption" color="text.secondary">
                               {formatDate(comment.created_at)}
                             </Typography>

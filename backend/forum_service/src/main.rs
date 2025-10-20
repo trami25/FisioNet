@@ -29,6 +29,13 @@ async fn main() -> Result<()> {
     let pool = create_pool(&config.database_url).await?;
     tracing::info!("Database pool created (using auth service database)");
 
+    // Run migrations (apply any pending migrations, e.g., convert author_id to TEXT)
+    tracing::info!("Running migrations for forum_service...");
+    if let Err(e) = run_migrations(&pool).await {
+        tracing::error!("Failed to run migrations: {}", e);
+        return Err(e);
+    }
+
     // Check if forum tables exist, create them if not
     let table_exists = sqlx::query_scalar::<_, i64>(
         "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='posts'"
@@ -39,12 +46,12 @@ async fn main() -> Result<()> {
     if table_exists == 0 {
         tracing::info!("Creating forum tables...");
         
-        // Create posts table
+        // Create posts table (author_id as TEXT to match auth service UUIDs)
         sqlx::query(
             r#"
             CREATE TABLE IF NOT EXISTS posts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                author_id INTEGER NOT NULL,
+                author_id TEXT NOT NULL,
                 title TEXT NOT NULL,
                 content TEXT NOT NULL,
                 created_at INTEGER NOT NULL,
@@ -61,7 +68,7 @@ async fn main() -> Result<()> {
             CREATE TABLE IF NOT EXISTS comments (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 post_id INTEGER NOT NULL,
-                author_id INTEGER NOT NULL,
+                author_id TEXT NOT NULL,
                 content TEXT NOT NULL,
                 created_at INTEGER NOT NULL,
                 updated_at INTEGER NOT NULL,

@@ -40,6 +40,26 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
       };
     case 'AUTH_SUCCESS':
       localStorage.setItem('token', action.payload.token);
+      // store a serialized user object for other parts of the app and for refresh persistence
+      try {
+        const storedUser = JSON.stringify({
+          id: (action.payload as any).user_id,
+          email: (action.payload as any).email,
+          firstName: (action.payload as any).first_name,
+          lastName: (action.payload as any).last_name,
+          phone: (action.payload as any).phone,
+          birthDate: (action.payload as any).birth_date,
+          height: (action.payload as any).height,
+          weight: (action.payload as any).weight,
+          jobType: (action.payload as any).job_type,
+          profileImage: (action.payload as any).profile_image,
+          role: (action.payload as any).role,
+          createdAt: (action.payload as any).created_at || new Date().toISOString(),
+        });
+        localStorage.setItem('user', storedUser);
+      } catch (e) {
+        // ignore storage errors
+      }
       return {
         ...state,
         user: {
@@ -80,6 +100,7 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
       };
     case 'LOGOUT':
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       return {
         ...state,
         user: null,
@@ -203,6 +224,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           created_at: response.data.created_at,
         };
         dispatch({ type: 'AUTH_SUCCESS', payload: userData });
+        // persist a normalized `user` object in localStorage (both snake_case and camelCase fields)
+        try {
+          const normalized = JSON.stringify({
+            id: response.data.id,
+            email: response.data.email,
+            firstName: response.data.first_name,
+            lastName: response.data.last_name,
+            phone: response.data.phone,
+            birthDate: response.data.birth_date,
+            height: response.data.height,
+            weight: response.data.weight,
+            jobType: response.data.job_type,
+            // keep both shapes so other parts of the app (camelCase or snake_case) can read it
+            profile_image: response.data.profile_image,
+            profileImage: response.data.profile_image,
+            role: response.data.role,
+            createdAt: response.data.created_at,
+          });
+          localStorage.setItem('user', normalized);
+        } catch (e) {
+          // ignore storage errors
+        }
+
+        // notify other parts of the app that profile (including avatar) changed
+        try { window.dispatchEvent(new CustomEvent('userProfileUpdated', { detail: { profile: response.data } })); } catch(e) {}
+        try { window.dispatchEvent(new Event('userProfileLocalUpdated')); } catch(e) {}
         return true;
       } else {
         dispatch({ type: 'AUTH_FAILURE', payload: response.error || 'Profile update failed' });

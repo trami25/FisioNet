@@ -98,7 +98,50 @@ pub async fn get_exercises(
             )
         })?;
 
-    let response: Vec<ExerciseResponse> = exercises.into_iter().map(|e| e.into()).collect();
+    let mut response: Vec<ExerciseResponse> = exercises.into_iter().map(|e| e.into()).collect();
+
+    // Attach images for each exercise in the list efficiently in a single query
+    let ids: Vec<i64> = response.iter().map(|r| r.id).collect();
+    if !ids.is_empty() {
+        // build placeholders for IN clause like ?,?,?
+        let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let images_query = format!(
+            "SELECT exercise_id, url FROM exercise_images WHERE exercise_id IN ({}) ORDER BY exercise_id, position ASC",
+            placeholders
+        );
+
+        let mut q = sqlx::query(&images_query);
+        for id in &ids {
+            q = q.bind(id);
+        }
+
+        let rows = q
+            .fetch_all(&pool)
+            .await
+            .map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(ErrorResponse { error: format!("Database error: {}", e) }),
+                )
+            })?;
+
+        use std::collections::HashMap;
+        let mut map: HashMap<i64, Vec<String>> = HashMap::new();
+        for row in rows {
+            let ex_id: i64 = row.get::<i64, _>("exercise_id");
+            let url: String = row.get::<String, _>("url");
+            map.entry(ex_id).or_default().push(url);
+        }
+
+        for resp in response.iter_mut() {
+            if let Some(imgs) = map.get(&resp.id) {
+                resp.images = Some(imgs.clone());
+            } else {
+                resp.images = None;
+            }
+        }
+    }
+
     Ok(Json(response))
 }
 

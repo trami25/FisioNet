@@ -23,6 +23,35 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  // Dev auth shim: attach x-user-id from stored user if available
+  try {
+    const userJson = localStorage.getItem('user');
+    if (userJson) {
+      const user = JSON.parse(userJson);
+      if (user?.id) {
+        (config.headers as any)['x-user-id'] = user.id;
+      }
+    }
+    // If user not stored but token exists, try to decode sub from JWT token as fallback
+    if (!(config.headers as any)['x-user-id']) {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const payload = token.split('.')[1];
+          const json = JSON.parse(decodeURIComponent(escape(window.atob(payload.replace(/-/g, '+').replace(/_/g, '/')))));
+          if (json && json.sub) {
+            (config.headers as any)['x-user-id'] = json.sub;
+          }
+        } catch (e) {
+          // ignore decode errors
+        }
+      }
+    }
+  } catch (_) {
+    // ignore JSON parse errors
+  }
+  // Debug: show outgoing headers for troubleshooting auth issues
+  try { console.debug('[forumService] outgoing headers', (config.headers as any)); } catch (e) {}
   return config;
 });
 

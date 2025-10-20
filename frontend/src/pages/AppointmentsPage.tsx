@@ -30,6 +30,7 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import duration from 'dayjs/plugin/duration';
 import { appointmentService } from '../services/appointmentService';
+import { usersService } from '../services/usersService';
 import { NewAppointment, Physiotherapist } from '../types';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
@@ -114,19 +115,20 @@ export const AppointmentsPage: React.FC = () => {
       setLoading(true);
       const appointmentsData = await appointmentService.getMyAppointments();
       
-      // Load physiotherapist details for each appointment
-      const appointmentsWithPhysiotherapists = await Promise.all(
-        appointmentsData.map(async (appointment) => {
-          try {
-            // For now, we'll just use the appointment data without loading full physiotherapist details
-            // You can implement this by calling a user service to get physiotherapist details
-            return { ...appointment, physiotherapist: undefined };
-          } catch (error) {
-            console.error('Error loading physiotherapist:', error);
-            return appointment;
-          }
-        })
+      // Enrich appointments with physiotherapist profiles (frontend-side fast fix)
+      const physioIds = Array.from(new Set(appointmentsData.map(a => a.physiotherapist_id)));
+      const users = await Promise.all(
+        physioIds.map((id) => usersService.getUserById(id).catch(() => null))
       );
+      const userMap: Record<string, any> = {};
+      physioIds.forEach((id, idx) => {
+        if (users[idx]) userMap[id] = users[idx];
+      });
+
+      const appointmentsWithPhysiotherapists = appointmentsData.map(appointment => ({
+        ...appointment,
+        physiotherapist: userMap[appointment.physiotherapist_id] || undefined,
+      }));
 
       setAppointments(appointmentsWithPhysiotherapists);
     } catch (error) {

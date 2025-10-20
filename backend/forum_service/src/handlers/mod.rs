@@ -2,6 +2,7 @@ use axum::{
     extract::{Path, Extension, Json, Query},
     http::StatusCode,
     response::IntoResponse,
+    http::HeaderMap,
 };
 use sqlx::SqlitePool;
 use serde::{Deserialize, Serialize};
@@ -9,7 +10,7 @@ use crate::models::*;
 
 #[derive(Debug, Deserialize)]
 pub struct AuthHeader {
-    pub user_id: i64,
+    pub user_id: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -44,6 +45,7 @@ pub async fn get_posts(
         SELECT 
             p.id, p.author_id, p.title, p.content, p.created_at, p.updated_at,
             COALESCE(u.first_name || ' ' || u.last_name, 'Unknown User') as author_name,
+            u.profile_image as author_profile_image,
             (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comments_count
         FROM posts p
         LEFT JOIN users u ON p.author_id = u.id
@@ -75,6 +77,7 @@ pub async fn get_post(
         SELECT 
             p.id, p.author_id, p.title, p.content, p.created_at, p.updated_at,
             COALESCE(u.first_name || ' ' || u.last_name, 'Unknown User') as author_name,
+            u.profile_image as author_profile_image,
             (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comments_count
         FROM posts p
         LEFT JOIN users u ON p.author_id = u.id
@@ -103,10 +106,22 @@ pub async fn get_post(
 // Create post
 pub async fn create_post(
     Extension(pool): Extension<SqlitePool>,
+    headers: HeaderMap,
     Json(req): Json<CreatePostRequest>,
 ) -> Result<Json<Post>, (StatusCode, Json<ErrorResponse>)> {
-    // For now, using a hardcoded user_id. In production, extract from JWT token
-    let user_id = 1;
+    // Extract user id from x-user-id header (dev auth shim)
+    let user_id = match headers.get("x-user-id") {
+        Some(v) => match v.to_str() {
+            Ok(s) => s.to_string(),
+            Err(_) => {
+                return Err((StatusCode::BAD_REQUEST, Json(ErrorResponse { error: "invalid_x_user_id".to_string() })))
+            }
+        },
+        None => {
+            return Err((StatusCode::UNAUTHORIZED, Json(ErrorResponse { error: "missing_x_user_id".to_string() })))
+        }
+    };
+
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
@@ -118,7 +133,7 @@ pub async fn create_post(
         VALUES (?, ?, ?, ?, ?)
         "#
     )
-    .bind(user_id)
+    .bind(&user_id)
     .bind(&req.title)
     .bind(&req.content)
     .bind(now)
@@ -257,7 +272,8 @@ pub async fn get_post_comments(
         r#"
         SELECT 
             c.id, c.post_id, c.author_id, c.content, c.created_at, c.updated_at,
-            COALESCE(u.first_name || ' ' || u.last_name, 'Unknown User') as author_name
+            COALESCE(u.first_name || ' ' || u.last_name, 'Unknown User') as author_name,
+            u.profile_image as author_profile_image
         FROM comments c
         LEFT JOIN users u ON c.author_id = u.id
         WHERE c.post_id = ?
@@ -281,10 +297,22 @@ pub async fn get_post_comments(
 pub async fn create_comment(
     Extension(pool): Extension<SqlitePool>,
     Path(post_id): Path<i64>,
+    headers: HeaderMap,
     Json(req): Json<CreateCommentRequest>,
 ) -> Result<Json<Comment>, (StatusCode, Json<ErrorResponse>)> {
-    // For now, using a hardcoded user_id. In production, extract from JWT token
-    let user_id = 1;
+    // Extract user id from x-user-id header (dev auth shim)
+    let user_id = match headers.get("x-user-id") {
+        Some(v) => match v.to_str() {
+            Ok(s) => s.to_string(),
+            Err(_) => {
+                return Err((StatusCode::BAD_REQUEST, Json(ErrorResponse { error: "invalid_x_user_id".to_string() })))
+            }
+        },
+        None => {
+            return Err((StatusCode::UNAUTHORIZED, Json(ErrorResponse { error: "missing_x_user_id".to_string() })))
+        }
+    };
+
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
@@ -297,7 +325,7 @@ pub async fn create_comment(
         "#
     )
     .bind(post_id)
-    .bind(user_id)
+    .bind(&user_id)
     .bind(&req.content)
     .bind(now)
     .bind(now)

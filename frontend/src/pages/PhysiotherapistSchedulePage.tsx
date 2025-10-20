@@ -46,6 +46,7 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import duration from 'dayjs/plugin/duration';
 import { appointmentService } from '../services/appointmentService';
+import { usersService } from '../services/usersService';
 import { NewAppointment, User } from '../types';
 
 dayjs.extend(relativeTime);
@@ -132,9 +133,17 @@ export const PhysiotherapistSchedulePage: React.FC = () => {
     try {
       setLoading(true);
       const appointmentsData = await appointmentService.getMyAppointments();
-      
-      // Za sada samo koristimo appointments bez dodatnih patient detalja
-      // Jer appointmentService.getPatient() ne postoji
+
+      // Enrich appointments with patient profiles (frontend-side fast fix)
+      const patientIds = Array.from(new Set(appointmentsData.map(a => a.patient_id)));
+      const users = await Promise.all(
+        patientIds.map((id) => usersService.getUserById(id).catch(() => null))
+      );
+      const userMap: Record<string, any> = {};
+      patientIds.forEach((id, idx) => {
+        if (users[idx]) userMap[id] = users[idx];
+      });
+
       setAppointments(appointmentsData.map(apt => ({
         ...apt,
         // Mapiramo nova polja na stara polja za kompatibilnost
@@ -143,7 +152,7 @@ export const PhysiotherapistSchedulePage: React.FC = () => {
         dateTime: `${apt.appointment_date} ${apt.start_time}`,
         duration: 20, // default duration
         createdAt: new Date().toISOString(), // placeholder
-        patient: undefined // placeholder
+        patient: userMap[apt.patient_id] || undefined
       })));
       setError(null);
     } catch (error) {

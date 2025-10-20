@@ -233,9 +233,13 @@ export const ChatPage: React.FC = () => {
                       >
                         <ListItemAvatar>
                           <Badge badgeContent={conv.unread_count} color="primary">
-                            <Avatar>
-                              <PersonIcon />
-                            </Avatar>
+                            {conv.other_user_profile_image ? (
+                              <Avatar src={conv.other_user_profile_image} />
+                            ) : (
+                              <Avatar>
+                                <PersonIcon />
+                              </Avatar>
+                            )}
                           </Badge>
                         </ListItemAvatar>
                         <ListItemText
@@ -289,9 +293,13 @@ export const ChatPage: React.FC = () => {
                 {/* Chat Header */}
                 <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Avatar>
-                      <PersonIcon />
-                    </Avatar>
+                    {selectedConversation?.other_user_profile_image ? (
+                      <Avatar src={selectedConversation.other_user_profile_image} />
+                    ) : (
+                      <Avatar>
+                        <PersonIcon />
+                      </Avatar>
+                    )}
                     <Box>
                       <Typography variant="h6">{selectedConversation.other_user_name}</Typography>
                       <Typography variant="body2" color="text.secondary">

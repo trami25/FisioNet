@@ -35,6 +35,27 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuth();
   const { unreadCount } = useUnreadMessages();
+    // update avatar on profile change
+    React.useEffect(() => {
+      const handler = (e: any) => {
+        try {
+          const profile = e.detail?.profile;
+          if (profile && profile.id === user?.id) {
+            // update local storage user
+            const stored = localStorage.getItem('user');
+            if (stored) {
+              const obj = JSON.parse(stored);
+              obj.profileImage = profile.profile_image;
+              localStorage.setItem('user', JSON.stringify(obj));
+            }
+            // force a re-render by dispatching a small custom event (consumers can subscribe)
+            try { window.dispatchEvent(new Event('userProfileLocalUpdated')); } catch(e) {}
+          }
+        } catch (err) {}
+      };
+      window.addEventListener('userProfileUpdated', handler as EventListener);
+      return () => window.removeEventListener('userProfileUpdated', handler as EventListener);
+    }, [user]);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -92,14 +113,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               >
                 Vežbe
               </Button>
-              <Button
-                color="inherit"
-                component={Link}
-                to="/physiotherapists"
-                sx={{ textTransform: 'none' }}
-              >
-                Fizioterapeuti
-              </Button>
+             
               {isAuthenticated && (
                 <>
                   {user?.role === 'physiotherapist' ? (
@@ -122,6 +136,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       </Button>
                     </>
                   ) : (
+                    
                     <Button
                       color="inherit"
                       component={Link}
@@ -139,6 +154,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   >
                     Forum
                   </Button>
+                   <Button
+                      color="inherit"
+                      component={Link}
+                      to="/physiotherapists"
+                      sx={{ textTransform: 'none' }}
+                    >
+                      Fizioterapeuti
+                    </Button>
                   {user?.role === 'admin' && (
                     <Button
                       color="inherit"

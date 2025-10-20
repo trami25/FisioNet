@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { usersService } from './usersService';
 
 const API_BASE_URL = process.env.REACT_APP_CHAT_API_URL || 'http://localhost:8003';
 const WS_BASE_URL = process.env.REACT_APP_CHAT_WS_URL || 'ws://localhost:8003';
@@ -35,6 +36,7 @@ export interface Conversation {
   other_user_name: string;
   other_user_email: string;
   other_user_role: string;
+  other_user_profile_image?: string;
   last_message?: string;
   last_message_time?: number;
   unread_count: number;
@@ -146,7 +148,17 @@ export const chatService = {
   getConversations: async (userId: string): Promise<Conversation[]> => {
     try {
       const response = await api.get(`/users/${userId}/conversations`);
-      return response.data.conversations;
+      const convs: Conversation[] = response.data.conversations || [];
+      // Enrich conversations with profile images where possible
+      await Promise.all(convs.map(async (c) => {
+        try {
+          const user = await usersService.getUserById(c.other_user_id);
+          (c as any).other_user_profile_image = user.profileImage;
+        } catch (err) {
+          // ignore individual fetch errors
+        }
+      }));
+      return convs;
     } catch (error: any) {
       throw new Error(error.response?.data?.error || 'Failed to fetch conversations');
     }
