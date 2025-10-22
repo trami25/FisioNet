@@ -1,4 +1,5 @@
 import { User } from '../types';
+import { normalizeUser } from './usersService';
 
 export interface CreateUserRequest {
   email: string;
@@ -50,7 +51,9 @@ class AdminService {
       throw new Error('Greška pri dobijanju korisnika');
     }
 
-    return response.json();
+    const json = await response.json();
+    const users: User[] = (json.users || []).map((u: any) => normalizeUser(u));
+    return { users, total: json.total || users.length };
   }
 
   // Kreiranje novog korisnika
@@ -66,7 +69,8 @@ class AdminService {
       throw new Error(error.message || 'Greška pri kreiranju korisnika');
     }
 
-    return response.json();
+    const json = await response.json();
+    return normalizeUser(json);
   }
 
   // Ažuriranje korisnika
@@ -82,7 +86,8 @@ class AdminService {
       throw new Error(error.message || 'Greška pri ažuriranju korisnika');
     }
 
-    return response.json();
+    const json = await response.json();
+    return normalizeUser(json);
   }
 
   // Brisanje korisnika
@@ -108,7 +113,8 @@ class AdminService {
       throw new Error('Greška pri dobijanju korisnika');
     }
 
-    return response.json();
+    const json = await response.json();
+    return normalizeUser(json);
   }
 
   // Dobijanje korisnika po ulozi
@@ -122,7 +128,7 @@ class AdminService {
     }
 
     const data = await response.json();
-    return data.users;
+    return (data.users || []).map((u: any) => normalizeUser(u));
   }
 
   // Statistike korisnika

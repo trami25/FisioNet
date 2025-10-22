@@ -37,6 +37,12 @@ import { exerciseService } from '../services/exerciseService';
 import ImageCarousel from '../components/ImageCarousel';
 
 export const ExercisesPage: React.FC = () => {
+  // Prepend backend base URL to image paths if needed
+  const EXERCISE_API_URL = process.env.REACT_APP_EXERCISE_API_URL || 'http://localhost:8005';
+  const getImageUrls = (images?: string[]) => {
+    if (!images) return [];
+    return images.map(url => url.startsWith('/static/') ? `${EXERCISE_API_URL}${url}` : url);
+  };
   const navigate = useNavigate();
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -205,29 +211,19 @@ export const ExercisesPage: React.FC = () => {
       duration_minutes: 10,
       equipment_needed: [],
       instructions: [],
-      image_url: '',
+      images: [],
       video_url: '',
       youtube_url: '',
       target_muscles: [],
       is_specialized: false,
     });
-    setImages(['']);
+    setImages([]);
     setIsFormOpen(true);
   };
 
   const openEditForm = (exercise: Exercise) => {
     setCurrentExercise({ ...exercise });
-    // parse image_url as array if stored as JSON
-    let imgs: string[] = [];
-    if (exercise.image_url) {
-      const s = exercise.image_url.trim();
-      if (s.startsWith('[')) {
-        try { imgs = JSON.parse(s); } catch { imgs = [s]; }
-      } else {
-        imgs = [s];
-      }
-    }
-    setImages(imgs.length ? imgs : ['']);
+    setImages(exercise.images && exercise.images.length ? exercise.images : []);
     setIsFormOpen(true);
   };
 
@@ -242,6 +238,7 @@ export const ExercisesPage: React.FC = () => {
     if (!currentExercise) return;
     try {
       let createdOrUpdatedId: number | null = null;
+      let uploadedImageUrls: string[] = [];
 
       if (currentExercise.id) {
         const payload: UpdateExerciseRequest = {
@@ -252,7 +249,6 @@ export const ExercisesPage: React.FC = () => {
           duration_minutes: currentExercise.duration_minutes,
           equipment_needed: currentExercise.equipment_needed,
           instructions: currentExercise.instructions,
-          image_url: images.length ? JSON.stringify(images.filter(Boolean)) : currentExercise.image_url,
           video_url: currentExercise.video_url,
           target_muscles: currentExercise.target_muscles,
           youtube_url: currentExercise.youtube_url,
@@ -268,7 +264,6 @@ export const ExercisesPage: React.FC = () => {
           duration_minutes: currentExercise.duration_minutes,
           equipment_needed: currentExercise.equipment_needed || [],
           instructions: currentExercise.instructions || [],
-          image_url: images.length ? JSON.stringify(images.filter(Boolean)) : currentExercise.image_url,
           video_url: currentExercise.video_url,
           youtube_url: currentExercise.youtube_url,
           target_muscles: currentExercise.target_muscles || [],
@@ -281,17 +276,21 @@ export const ExercisesPage: React.FC = () => {
       // If files were selected, upload them to the exercise images endpoint
       if (selectedFiles.length && createdOrUpdatedId) {
         try {
-          await exerciseService.uploadExerciseImages(createdOrUpdatedId, selectedFiles);
+          uploadedImageUrls = await exerciseService.uploadExerciseImages(createdOrUpdatedId, selectedFiles);
         } catch (uploadErr) {
           console.error('Image upload failed', uploadErr);
-          // non-fatal: continue to reload exercises but show an error
           setError('Saved exercise but failed to upload images');
         }
       }
 
+      // Update exercise with image URLs if uploaded
+      if (uploadedImageUrls.length && createdOrUpdatedId) {
+        await exerciseService.updateExercise(createdOrUpdatedId, { images: uploadedImageUrls });
+      }
+
       await loadExercises();
-  closeForm();
-  setSelectedFiles([]);
+      closeForm();
+      setSelectedFiles([]);
     } catch (err: any) {
       console.error('Failed to save exercise', err);
       setError(err.response?.data?.error || 'Failed to save exercise');
@@ -463,7 +462,7 @@ export const ExercisesPage: React.FC = () => {
               {/* Image */}
               <Box sx={{ width: { xs: 150, sm: 200, md: 300 }, height: { xs: 220, sm: 250 }, maxWidth: { xs: 150, sm: 200, md: 300 }, flexBasis: { xs: '150px', sm: '200px', md: '300px' }, flex: '0 0 auto' }}>
                 {exercise.images && exercise.images.length > 0 ? (
-                  <ImageCarousel images={exercise.images} alt={exercise.title} />
+                  <ImageCarousel images={getImageUrls(exercise.images)} alt={exercise.title} />
                 ) : (
                   <CardMedia component="img" image={exercise.image_url || `https://via.placeholder.com/300x250?text=${encodeURIComponent(exercise.title)}`} alt={exercise.title} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 )}
@@ -583,18 +582,7 @@ export const ExercisesPage: React.FC = () => {
           </FormControl>
           <TextField label="Trajanje (min)" type="number" value={currentExercise?.duration_minutes || 0} onChange={(e) => setCurrentExercise((prev: Partial<Exercise> | null) => prev ? ({ ...prev, duration_minutes: parseInt(e.target.value || '0') }) : prev)} />
           <TextField label="Ciljna grupa (comma separated)" value={(currentExercise?.target_muscles || []).join(', ')} onChange={(e) => setCurrentExercise((prev: Partial<Exercise> | null) => prev ? ({ ...prev, target_muscles: e.target.value.split(',').map((s:string)=>s.trim()) }) : prev)} fullWidth />
-          <TextField label="Image URL" value={currentExercise?.image_url || ''} onChange={(e) => setCurrentExercise((prev: Partial<Exercise> | null) => prev ? ({ ...prev, image_url: e.target.value }) : prev)} fullWidth />
-          {/* Multiple images input */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            {images.map((img, idx) => (
-              <Box key={idx} sx={{ display: 'flex', gap: 1 }}>
-                <TextField label={`Image ${idx+1} URL`} value={img} onChange={(e) => setImages(prev => { const next = [...prev]; next[idx] = e.target.value; return next; })} fullWidth />
-                <Button color="error" onClick={() => setImages(prev => prev.filter((_, i) => i !== idx))}>Remove</Button>
-              </Box>
-            ))}
-            <Button onClick={() => setImages(prev => [...prev, ''])}>Add another image</Button>
-          </Box>
-          {/* File upload */}
+          {/* File upload for images */}
           <Box>
             <Typography variant="subtitle2">Upload images</Typography>
             <input

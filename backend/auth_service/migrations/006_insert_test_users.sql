@@ -2,13 +2,14 @@
 
 -- Admin user
 INSERT OR IGNORE INTO users (
+
     id, email, password_hash, first_name, last_name, phone, birth_date, 
-    height, weight, job_type, role, profile_image, created_at,
+    height, weight, job_type, role, profile_image, created_at, updated_at,
     specializations, certifications, years_of_experience, education, bio
 ) VALUES (
     'admin-001', 
     'admin@fisionet.rs', 
-    '$2b$12$LQv3c1yqBwlXvA2H8v9zKOZnOHgFq5eaQ3pJr9XZJgKVqZjYqVq9G', -- password: admin123
+    '$2b$12$.9uCkgksklABUCPWFH8/FeJc5IXFoe6acSHw.Gagq56jo6CzjuQ4a', -- password: admin123
     'Administrator', 
     'FisioNet', 
     '+381601234567', 
@@ -19,6 +20,7 @@ INSERT OR IGNORE INTO users (
     'admin', 
     NULL, 
     '2025-10-14T22:00:00Z',
+    '2025-10-14T22:00:00Z',
     NULL,
     NULL,
     NULL,
@@ -28,13 +30,14 @@ INSERT OR IGNORE INTO users (
 
 -- Physiotherapist user
 INSERT OR IGNORE INTO users (
+
     id, email, password_hash, first_name, last_name, phone, birth_date, 
-    height, weight, job_type, role, profile_image, created_at,
+    height, weight, job_type, role, profile_image, created_at, updated_at,
     specializations, certifications, years_of_experience, education, bio
 ) VALUES (
     'physio-001', 
     'milan.mitrovic@fisionet.rs', 
-    '$2b$12$LQv3c1yqBwlXvA2H8v9zKOZnOHgFq5eaQ3pJr9XZJgKVqZjYqVq9G', -- password: physio123
+    '$2b$12$Vakaq6goL6bmasSBu8BfWOXBSsru8Q/4vKEmnHAW1.1inDBlew2wC', -- password: physio123
     'Milan', 
     'Mitrović', 
     '+381645000018', 
@@ -45,6 +48,7 @@ INSERT OR IGNORE INTO users (
     'physiotherapist', 
     NULL, 
     '2025-10-14T22:00:00Z',
+    '2025-10-14T22:00:00Z',
     '[{"name": "Sportska fizioterapija", "description": "Specijalizovan za rad sa sportistima i povrede nastale tokom sportskih aktivnosti"}, {"name": "Neurološka rehabilitacija", "description": "Tretman pacijenata sa neurološkim poremećajima"}]',
     '[{"name": "Sertifikat za sportsku fizioterapiju", "issuer": "Fakultet sporta i fizičkog vaspitanja", "date_obtained": "2015-06-15", "expiry_date": "2025-06-15"}, {"name": "NDT Bobath koncept", "issuer": "IBITA", "date_obtained": "2018-09-10", "expiry_date": null}]',
     8,
@@ -54,13 +58,14 @@ INSERT OR IGNORE INTO users (
 
 -- Patient user  
 INSERT OR IGNORE INTO users (
+
     id, email, password_hash, first_name, last_name, phone, birth_date, 
-    height, weight, job_type, role, profile_image, created_at,
+    height, weight, job_type, role, profile_image, created_at, updated_at,
     specializations, certifications, years_of_experience, education, bio
 ) VALUES (
     'patient-001', 
     'nikola.mitrovic@gmail.com', 
-    '$2b$12$LQv3c1yqBwlXvA2H8v9zKOZnOHgFq5eaQ3pJr9XZJgKVqZjYqVq9G', -- password: patient123
+    '$2b$12$.ap8YYZitZxodom2vXByc.aTZD1NlC8pRtCi4vwcCsEGmH47jqPUO', -- password: patient123
     'Nikola', 
     'Mitrović', 
     '+381645000019', 
@@ -70,6 +75,7 @@ INSERT OR IGNORE INTO users (
     'softverski inženjer', 
     'patient', 
     NULL, 
+    '2025-10-14T22:00:00Z',
     '2025-10-14T22:00:00Z',
     NULL,
     NULL,

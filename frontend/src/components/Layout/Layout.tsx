@@ -113,10 +113,55 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               >
                 Vežbe
               </Button>
-             
+
               {isAuthenticated && (
                 <>
-                  {user?.role === 'physiotherapist' ? (
+                  {/* Admin: show Pacijenti and Fizioterapeuti, hide Termini */}
+                  {user?.role === 'admin' && (
+                    <>
+                      <Button
+                        color="inherit"
+                        component={Link}
+                        to="/patients"
+                        sx={{ textTransform: 'none' }}
+                      >
+                        Pacijenti
+                      </Button>
+                      <Button
+                        color="inherit"
+                        component={Link}
+                        to="/physiotherapists"
+                        sx={{ textTransform: 'none' }}
+                      >
+                        Fizioterapeuti
+                      </Button>
+                    </>
+                  )}
+
+                  {/* Patient: show Fizioterapeuti, hide Pacijenti, show Termini (appointments) */}
+                  {user?.role === 'patient' && (
+                    <>
+                      <Button
+                        color="inherit"
+                        component={Link}
+                        to="/appointments"
+                        sx={{ textTransform: 'none' }}
+                      >
+                        Termini
+                      </Button>
+                      <Button
+                        color="inherit"
+                        component={Link}
+                        to="/physiotherapists"
+                        sx={{ textTransform: 'none' }}
+                      >
+                        Fizioterapeuti
+                      </Button>
+                    </>
+                  )}
+
+                  {/* Physio: show Pacijenti and Moj Raspored, hide Fizioterapeuti and Termini */}
+                  {user?.role === 'physiotherapist' && (
                     <>
                       <Button
                         color="inherit"
@@ -135,17 +180,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                         Pacijenti
                       </Button>
                     </>
-                  ) : (
-                    
-                    <Button
-                      color="inherit"
-                      component={Link}
-                      to="/appointments"
-                      sx={{ textTransform: 'none' }}
-                    >
-                      Termini
-                    </Button>
                   )}
+
+                  {/* Common for all roles */}
                   <Button
                     color="inherit"
                     component={Link}
@@ -154,14 +191,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   >
                     Forum
                   </Button>
-                   <Button
-                      color="inherit"
-                      component={Link}
-                      to="/physiotherapists"
-                      sx={{ textTransform: 'none' }}
-                    >
-                      Fizioterapeuti
-                    </Button>
+
+                  {/* Only admin sees Admin Panel */}
                   {user?.role === 'admin' && (
                     <Button
                       color="inherit"

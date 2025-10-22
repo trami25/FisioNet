@@ -112,7 +112,7 @@ class UsersService {
   }
 }
 
-function normalizeUser(u: any): User {
+export function normalizeUser(u: any): User {
   return {
     id: u.id,
     email: u.email,

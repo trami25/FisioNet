@@ -7,6 +7,7 @@ use std::net::SocketAddr;
 use tower_http::cors::CorsLayer;
 use tracing_subscriber;
 use anyhow::Result;
+use bcrypt::{hash, DEFAULT_COST};
 
 mod models;
 mod handlers;
@@ -34,6 +35,10 @@ async fn main() -> Result<()> {
     // Run migrations
     run_migrations(&pool).await?;
     tracing::info!("Database migrations completed");
+
+    println!("admin123: {}", hash("admin123", DEFAULT_COST).unwrap());
+    println!("physio123: {}", hash("physio123", DEFAULT_COST).unwrap());
+    println!("patient123: {}", hash("patient123", DEFAULT_COST).unwrap());
 
     // Build application routes
     let app = Router::new()

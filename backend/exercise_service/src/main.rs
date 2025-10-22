@@ -1,9 +1,11 @@
 use axum::{
     routing::{get, post, put, delete},
     Router, Extension,
+    extract::DefaultBodyLimit,
 };
 use std::net::SocketAddr;
 use tower_http::cors::CorsLayer;
+use tower_http::limit::RequestBodyLimitLayer;
 use tower_http::services::ServeDir;
 use tracing_subscriber;
 use anyhow::Result;
@@ -113,8 +115,8 @@ async fn main() -> Result<()> {
         .route("/exercises/:exercise_id", get(get_exercise))
         .route("/exercises/:exercise_id", put(update_exercise))
         .route("/exercises/:exercise_id", delete(delete_exercise))
-        // upload and manage images
-        .route("/exercises/:exercise_id/images", post(upload_exercise_images))
+        // upload and manage images (set 20MB limit for this route only)
+        .route("/exercises/:exercise_id/images", post(upload_exercise_images).layer(DefaultBodyLimit::max(20 * 1024 * 1024)))
         .route("/exercises/:exercise_id/images/:image_id", delete(delete_exercise_image))
         // serve static images from ./static
         .nest_service(
@@ -122,7 +124,8 @@ async fn main() -> Result<()> {
             ServeDir::new(current_dir.join("static"))
         )
         .layer(Extension(pool))
-        .layer(CorsLayer::permissive());
+        .layer(CorsLayer::permissive())
+        .layer(RequestBodyLimitLayer::new(20 * 1024 * 1024)); // fallback global limit
 
     // Start server
     let addr = SocketAddr::from(([0, 0, 0, 0], config.server_port));

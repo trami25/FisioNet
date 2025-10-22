@@ -79,7 +79,14 @@ export const PhysiotherapistsPage: React.FC = () => {
   }, [physiotherapists, searchTerm]);
 
   const handleBookAppointment = (physiotherapist: User) => {
-    navigate(`/appointment-booking/${physiotherapist.id}`);
+    // For both patients and physios, navigate to the unified booking endpoint
+    // patientId: for patients, their own id; for physios, select patient in booking page
+    if (user?.role === 'patient') {
+      navigate(`/patients/${user.id}/book/${physiotherapist.id}`);
+    } else if (user?.role === 'physiotherapist' || user?.role === 'admin') {
+      // For physios/admins, you may want to select patient in the booking page, so pass physio id as :id
+      navigate(`/patients/select/book/${physiotherapist.id}`);
+    }
   };
 
   const handleViewProfile = (physiotherapist: User) => {
@@ -102,11 +109,11 @@ export const PhysiotherapistsPage: React.FC = () => {
     );
   }
 
-  if (user?.role !== 'patient') {
+  if (user?.role !== 'patient' && user?.role !== 'admin') {
     return (
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Alert severity="warning">
-          Samo pacijenti mogu da pristupe listi fizioterapeuta.
+          Samo pacijenti ili administratori mogu da pristupe listi fizioterapeuta.
         </Alert>
       </Container>
     );

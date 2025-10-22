@@ -6,9 +6,7 @@ const API_BASE_URL = process.env.REACT_APP_EXERCISE_API_URL || 'http://localhost
 // Create axios instance for exercise service
 const exerciseClient = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  // No global headers! Let axios/browser set Content-Type automatically.
 });
 
 // Add request interceptor to include auth token
@@ -148,15 +146,15 @@ export const exerciseService = {
       return null;
     };
     const userId = getUserId();
+    // Do NOT set Content-Type header for FormData!
     const headers: any = {};
     if (userId) headers['x-user-id'] = userId;
 
     const form = new FormData();
     files.forEach((f) => form.append('file', f));
 
-    // Let the browser/axios set the multipart Content-Type (boundary)
-    const response = await exerciseClient.post<string[]>(`/exercises/${exerciseId}/images`, form);
-
+    // Pass headers explicitly, but do not set Content-Type
+    const response = await exerciseClient.post<string[]>(`/exercises/${exerciseId}/images`, form, { headers });
     return response.data;
   },
 };

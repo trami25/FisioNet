@@ -13,7 +13,7 @@ mod config;
 mod database;
 
 use config::Config;
-use database::{create_pool, run_migrations};
+use database::{create_pool};
 use handlers::*;
 
 #[tokio::main]
@@ -29,13 +29,8 @@ async fn main() -> Result<()> {
     let pool = create_pool(&config.database_url).await?;
     tracing::info!("Database pool created (using auth service database)");
 
-    // Run migrations (apply any pending migrations, e.g., convert author_id to TEXT)
-    tracing::info!("Running migrations for forum_service...");
-    if let Err(e) = run_migrations(&pool).await {
-        tracing::error!("Failed to run migrations: {}", e);
-        return Err(e);
-    }
-
+   
+  
     // Check if forum tables exist, create them if not
     let table_exists = sqlx::query_scalar::<_, i64>(
         "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='posts'"

@@ -137,7 +137,7 @@ pub async fn get_exercises(
             if let Some(imgs) = map.get(&resp.id) {
                 resp.images = Some(imgs.clone());
             } else {
-                resp.images = None;
+                resp.images = Some(vec![]);
             }
         }
     }
@@ -173,7 +173,7 @@ pub async fn get_exercise(
     // load images
     match load_images(&pool, exercise_id).await {
         Ok(imgs) => resp.images = Some(imgs),
-        Err(_) => resp.images = None,
+        Err(_) => resp.images = Some(vec![]),
     }
 
     Ok(Json(resp))
@@ -181,13 +181,23 @@ pub async fn get_exercise(
 
 // helper to load images for an exercise
 async fn load_images(pool: &SqlitePool, exercise_id: i64) -> Result<Vec<String>, (StatusCode, Json<ErrorResponse>)> {
-    let rows = sqlx::query("SELECT url FROM exercise_images WHERE exercise_id = ? ORDER BY position ASC")
-        .bind(exercise_id)
-        .fetch_all(pool)
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(ErrorResponse { error: format!("Database error: {}", e) })))?;
-
-    let urls = rows.into_iter().map(|r| r.get::<String, _>("url")).collect();
+    // Instead of reading from DB, scan static/images/{exercise_id}/ for files
+    let mut urls = Vec::new();
+    let folder = format!("static/images/{}", exercise_id);
+    match std::fs::read_dir(&folder) {
+        Ok(entries) => {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_file() {
+                    if let Some(fname) = path.file_name().and_then(|f| f.to_str()) {
+                        let url = format!("/static/images/{}/{}", exercise_id, fname);
+                        urls.push(url);
+                    }
+                }
+            }
+        }
+        Err(_) => {}
+    }
     Ok(urls)
 }
 
@@ -405,7 +415,10 @@ pub async fn upload_exercise_images(
     }
 
     let current_dir = env::current_dir().map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(ErrorResponse { error: format!("Server error: {}", e) })))?;
-    let images_dir = current_dir.join("static").join("images");
+    let images_dir = current_dir.join("static").join("images").join(exercise_id.to_string());
+    if !images_dir.exists() {
+        std::fs::create_dir_all(&images_dir).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(ErrorResponse { error: format!("Failed to create exercise image directory: {}", e) })))?;
+    }
 
     let mut saved_urls: Vec<String> = Vec::new();
 
@@ -420,8 +433,8 @@ pub async fn upload_exercise_images(
             let file_path = images_dir.join(&safe_name);
             fs::write(&file_path, &data).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(ErrorResponse { error: format!("Failed to save file: {}", e) })))?;
 
-            // store URL (serve under /static/images/<name>)
-            let url = format!("/static/images/{}", safe_name);
+            // store URL (serve under /static/images/{exercise_id}/{name})
+            let url = format!("/static/images/{}/{}", exercise_id, safe_name);
 
             // determine next position
             let position: i64 = sqlx::query_scalar("SELECT COALESCE(MAX(position), -1) + 1 FROM exercise_images WHERE exercise_id = ?")

@@ -192,6 +192,13 @@ export const ExerciseDetailPage: React.FC = () => {
     );
   }
 
+  // Prepend backend base URL to image paths if needed
+  const EXERCISE_API_URL = process.env.REACT_APP_EXERCISE_API_URL || 'http://localhost:8005';
+  const getImageUrls = (images?: string[]) => {
+    if (!images) return [];
+    return images.map(url => url.startsWith('/static/') ? `${EXERCISE_API_URL}${url}` : url);
+  };
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       {/* Back Button */}
@@ -207,10 +214,10 @@ export const ExerciseDetailPage: React.FC = () => {
         {/* Exercise Image */}
         <Paper elevation={2} sx={{ overflow: 'hidden' }}>
           {exercise.images && exercise.images.length > 0 ? (
-            <ImageCarousel images={exercise.images} alt={exercise.title} height={400} />
+            <ImageCarousel images={getImageUrls(exercise.images)} alt={exercise.title} height={400} />
           ) : (
             <img
-              src={exercise.image_url || `https://via.placeholder.com/800x400?text=${encodeURIComponent(exercise.title)}`}
+              src={`https://via.placeholder.com/800x400?text=${encodeURIComponent(exercise.title)}`}
               alt={exercise.title}
               style={{ width: '100%', height: '400px', objectFit: 'cover' }}
             />

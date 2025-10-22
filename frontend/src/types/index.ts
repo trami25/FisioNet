@@ -137,6 +137,7 @@ export interface UpdateExerciseRequest {
   equipment_needed?: string[];
   instructions?: string[];
   image_url?: string;
+  images?: string[];
   video_url?: string;
   youtube_url?: string;
   target_muscles?: string[];

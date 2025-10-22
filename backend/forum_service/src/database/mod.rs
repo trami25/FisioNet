@@ -12,7 +12,3 @@ pub async fn create_pool(database_url: &str) -> Result<SqlitePool> {
     Ok(pool)
 }
 
-pub async fn run_migrations(pool: &SqlitePool) -> Result<()> {
-    sqlx::migrate!("./migrations").run(pool).await?;
-    Ok(())
-}

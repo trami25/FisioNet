@@ -3,9 +3,10 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { CircularProgress, Box } from '@mui/material';
 
+type Role = 'patient' | 'physiotherapist' | 'moderator' | 'admin';
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: 'patient' | 'physiotherapist' | 'moderator' | 'admin';
+  requiredRole?: Role | Role[];
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
@@ -28,9 +29,16 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (requiredRole && user && user.role !== requiredRole) {
-    // User doesn't have required role
-    return <Navigate to="/" replace />;
+  if (requiredRole && user) {
+    if (Array.isArray(requiredRole)) {
+      if (!requiredRole.includes(user.role)) {
+        return <Navigate to="/" replace />;
+      }
+    } else {
+      if (user.role !== requiredRole) {
+        return <Navigate to="/" replace />;
+      }
+    }
   }
 
   return <>{children}</>;

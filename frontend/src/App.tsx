@@ -76,27 +76,35 @@ function App() {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/exercises" element={<ExercisesPage />} />
               <Route path="/exercises/:id" element={<ExerciseDetailPage />} />
-              <Route path="/physiotherapists" element={<PhysiotherapistsPage />} />
-              <Route path="/physiotherapists/:id" element={<PhysiotherapistDetailPage />} />
+              <Route path="/physiotherapists" element={
+                <ProtectedRoute requiredRole={["patient", "admin"]}>
+                  <PhysiotherapistsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/physiotherapists/:id" element={
+                <ProtectedRoute requiredRole={["patient", "admin"]}>
+                  <PhysiotherapistDetailPage />
+                </ProtectedRoute>
+              } />
               <Route path="/physiotherapists/:id/book" element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole={["patient","physiotherapist","admin"]}>
                   <AppointmentBookingPage />
                 </ProtectedRoute>
               } />
               <Route path="/patients/:patientId/book/:id" element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole={["patient","physiotherapist","admin"]}>
                   <AppointmentBookingPage />
                 </ProtectedRoute>
               } />
-              
-              {/* Protected routes - require authentication */}
+
+              {/* Protected routes - require authentication and/or role */}
               <Route path="/appointments" element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole="patient">
                   <AppointmentsPage />
                 </ProtectedRoute>
               } />
               <Route path="/schedule" element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole="physiotherapist">
                   <PhysiotherapistSchedulePage />
                 </ProtectedRoute>
               } />
@@ -121,12 +129,12 @@ function App() {
                 </ProtectedRoute>
               } />
               <Route path="/admin" element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole="admin">
                   <AdminPanelPage />
                 </ProtectedRoute>
               } />
               <Route path="/patients" element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole={["physiotherapist", "admin"]}>
                   <PatientsPage />
                 </ProtectedRoute>
               } />

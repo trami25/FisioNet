@@ -108,11 +108,11 @@ export const PatientsPage: React.FC = () => {
     );
   }
 
-  if (user?.role !== 'physiotherapist') {
+  if (user?.role !== 'physiotherapist' && user?.role !== 'admin') {
     return (
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Alert severity="warning">
-          Samo fizioterapeuti mogu da pristupe listi pacijenata.
+          Samo fizioterapeuti ili administratori mogu da pristupe listi pacijenata.
         </Alert>
       </Container>
     );
