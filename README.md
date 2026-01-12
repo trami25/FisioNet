@@ -2,36 +2,12 @@
 
 Radim za ocenu 10
 
-## 🚀 Quick Development Setup
+##  Quick Development Setup
 
 ### Prerequisites
 - Node.js 18+ (for frontend)
-- Docker Desktop (for databases)
-- Rust + Cargo (for backend services) *optional*
-
-### Start Development Environment
-```bash
-# 1. Start databases
-docker-compose up -d
-
-# 2. Start frontend  
-cd frontend
-npm install
-npm start
-# Available at: http://localhost:3000
-
-# 3. Start backend (if Rust installed)
-cd backend/auth_service
-cargo run
-# Available at: http://localhost:8001
-```
-
-### Development Scripts
-- `scripts/start-dev.bat` - Automated setup for Windows
-- `scripts/setup-windows-dev.ps1` - Install Rust & Build Tools
-- `scripts/LOCAL_DEVELOPMENT.md` - Detailed instructions
-
----
+- Docker (for databases)
+- Rust (for backend services) *optional*
 
 ## Opis
 **FisioNet** je informacioni sistem i zajednička platforma za pacijente, fizioterapeute, moderatore i administratore.  
@@ -120,7 +96,7 @@ Aplikacija bi bila dostupna kroz **web klijent (osnovni projekat)** i **mobilnu 
 
 ## Mobilna aplikacija (Diplomski deo)
 
-Mobilna aplikacija razvijena u **Flutter-u** za Android/iOS, povezana sa backend servisima.
+Mobilna aplikacija razvijena u **React Native-u** za Android/iOS, povezana sa backend servisima.
 
 ### Funkcionalnosti
 - Login i registracija.  
